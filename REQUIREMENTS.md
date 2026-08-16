@@ -273,23 +273,24 @@ Consequences:
 ### 4.3 Pagination
 
 - **[built]** The API supports `skip` / `limit` and returns a `total` count.
-- **[gap]** **The frontend never sends them.** It relies on the API default of
-  `limit=100` and renders whatever comes back. Past 100 applications, the table
-  shows only the first 100 rows.
+- **[built]** **The frontend paginates with a "Load more" control.** It requests
+  50 rows at a time, tracks `skip`, and *appends* each page rather than
+  replacing the previous one.
 
-  The displayed count stays correct — `total` is computed before `offset`/`limit`
-  is applied — so the symptom is a visible mismatch: the header reads "342
-  applications" while 100 rows are listed. Wrong, but self-announcing rather
-  than silent.
+  - The header reads `Showing 50 of 120 applications` while more remain, and
+    falls back to a plain `120 applications` once everything is loaded.
+  - The control is labelled with the remainder — `Load more (70 remaining)` —
+    and disappears when nothing is left to fetch.
+  - `total` is computed before `skip`/`limit` is applied, so the count is the
+    true total rather than the number currently rendered.
 
-  This is the one gap with a real failure mode rather than a rough edge, and it
-  gets worse the longer the tool is used successfully.
+  Chosen over a paged table (more UI than a personal tracker needs) and over
+  simply raising the limit (moves the ceiling instead of removing it).
 
-- **[decided]** Fix with a **"Load more" control**. The frontend tracks `skip`
-  and appends results rather than replacing them, using the pagination the API
-  already provides. Chosen over a paged table (more UI than a personal tracker
-  needs) and over simply raising the limit (moves the ceiling instead of
-  removing it).
+  This closes what was previously the one gap with a real failure mode: the
+  frontend used to send neither parameter, relying on the API default of
+  `limit=100`, so past 100 applications the table silently showed only the
+  first 100 rows while the header reported the true count.
 
 ### 4.4 Screens and navigation
 
