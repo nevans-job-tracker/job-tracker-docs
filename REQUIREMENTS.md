@@ -246,8 +246,16 @@ Consequences:
 
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
-- **[built]** Sort by company, role, status, or date applied — click a header to
-  toggle ascending/descending. Default: date applied, descending.
+- **[built]** Sort by company, role, location, source, status, next action
+  date, or date applied — click a header to toggle ascending/descending.
+  Default: date applied, descending. Salary is the one displayed column that is
+  not sortable.
+
+  The API accepts a wider set than the table exposes — `salary_min`,
+  `salary_max`, and `created_at` are permitted too — and rejects anything else
+  with a 422. That whitelist is a security boundary, not a convenience:
+  `crud.list_applications` resolves the column with `getattr`, so the pattern
+  on the route is the only thing preventing an arbitrary attribute lookup.
 - **[built]** Free-text search across company, role title, and location,
   debounced 250ms.
 - **[built]** Filter to a single status, or all statuses.
@@ -255,7 +263,6 @@ Consequences:
 - **[gap]** Search does not cover `notes` or `source`. Notes are where the
   useful detail lives (recruiter names, interview feedback) and are currently
   unsearchable.
-- **[gap]** Location and source are not sortable, though location is displayed.
 - **[built]** Search, filter, and sort state **persists in the URL**, not in
   local storage. It survives a reload, works with the browser back button, and
   makes a filtered view linkable. URL state is also inspectable in a way local
