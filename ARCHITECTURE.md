@@ -56,14 +56,68 @@ that motivated the split.
 
 ## Deployment notes
 
-Nothing here is settled. The serving stack is deliberately an open choice,
-to be decided in a story under KAN-14.
+**Decided (KAN-20): nginx in front of both, on a single origin.**
 
-- Candidates for the backend: `uvicorn`, wrapped in a systemd service.
-- Candidates for the frontend: build static files with `npm run build`, then
-  serve via nginx or the `serve` package.
-- Whatever origin the frontend ends up served from needs to be added to the
-  backend's `CORS_ORIGINS`.
+```
+phone / laptop ──▶ nginx :80 ──┬──▶ /        static files from dist/
+                               │             (try_files → index.html)
+                               └──▶ /api/    proxy to 127.0.0.1:8000
+                                                  │
+                                             uvicorn under systemd
+```
+
+- **Backend:** `uvicorn` under systemd, bound to `127.0.0.1:8000` — not
+  reachable from the LAN except through nginx.
+- **Frontend:** `npm run build`, and nginx serves `dist/` directly. The `serve`
+  package is not used.
+- **`VITE_API_URL=/api`** — a relative path, not an absolute origin.
+- **`CORS_ORIGINS` is not exercised by this deployment**, because everything is
+  same-origin. It still matters in development, where Vite serves on `:5173`
+  and calls the API on `:8000`; those are different origins and CORS applies as
+  before.
+
+### Why a reverse proxy earns its place here
+
+The question was whether a proxy is overkill for a single-user LAN app. Four
+things decided it:
+
+1. **It replaces a component rather than adding one.** Something has to serve
+   `dist/` either way. nginx does that *and* proxies; `serve` only does the
+   first. Two supervised services in both designs — but with nginx, Node is a
+   build-time dependency only, not a runtime one.
+
+2. **Same-origin removes CORS as a failure mode.** A `CORS_ORIGINS` mismatch
+   fails *only in the browser* while `curl` against the API works perfectly,
+   which is a genuinely confusing thing to debug. Not having the mechanism in
+   the path removes the whole class.
+
+3. **A relative `VITE_API_URL` decouples the build from the address.** Vite
+   inlines env vars at build time, so with a two-port design the server's IP is
+   baked into the bundle and changing the address means *rebuilding the
+   frontend*. With `/api` it does not.
+
+4. **It is where TLS and auth go later.** §6.1 makes remote access conditional
+   on authentication at the API layer. A proxy is the natural place to
+   terminate TLS and add a first gate, so choosing it now makes that work
+   additive instead of a re-architecture.
+
+The cost is one system package and one config file. The only thing the
+two-port design wins is that a dead static server would leave the API up —
+worth nothing here, since the app is unusable without its UI.
+
+### Constraints this imposes
+
+- **SPA fallback via `try_files $uri $uri/ /index.html`.** Client-side routing
+  means a cold request for `/applications/10` has no file on disk. Without the
+  rewrite, deep links 404 in production while working perfectly in the dev
+  server. See `REQUIREMENTS.md` §5.
+- **The `/api/` prefix is stripped at the proxy.** A trailing slash on
+  `proxy_pass` (`proxy_pass http://127.0.0.1:8000/;`) maps `/api/applications`
+  to `/applications`, so the FastAPI routes stay unprefixed and need no
+  `root_path`.
+- **`/docs` is reachable at `/api/docs` on the LAN.** Acceptable — LAN use
+  without auth is explicitly in scope (§1) — but it is part of what must not be
+  exposed when remote access is considered (§6.1).
 
 ## Security posture
 

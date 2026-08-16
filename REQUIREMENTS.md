@@ -345,9 +345,11 @@ must be updated to match.
   a refresh, or a shared link — hits the static server for a path that has no
   file. Whatever serves the build must rewrite unknown paths to `index.html`, or
   deep links 404 in production while working perfectly in the Vite dev server.
-  Both candidates already documented in the frontend README satisfy this
-  (nginx `try_files`, `serve -s`); the constraint is not to lose it when the
-  serving stack is chosen under KAN-14.
+  The serving stack is now decided (KAN-20): nginx, providing the fallback with
+  `try_files $uri $uri/ /index.html`. The constraint survives the decision — it
+  is a property of the nginx config, so it can still be lost by editing that
+  file carelessly, and it is not visible from clicking around the app. Only a
+  *cold* load of a deep URL exercises it.
 - **[built] Automated tests.** Backend: pytest against throwaway SQLite, no
   MySQL required — `DATABASE_URL` is overridden before the app is imported, and
   each test starts from empty tables. Frontend: Vitest + Testing Library in
