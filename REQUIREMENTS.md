@@ -350,11 +350,17 @@ must be updated to match.
   jsdom. Run with `pytest` and `npm test` respectively.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
-    generated output and belong in `.gitignore` once the repos are under git.
-  - **Coverage as measured:** backend 99% of statements — the only uncovered
-    line is the MySQL URL branch, which tests never take by design. Frontend
-    99%, covering routing, the API client, both page components, and all three
-    UI components.
+    generated output, and all four are gitignored.
+  - **Coverage as measured:** backend 109 tests, 99% of statements — the only
+    uncovered line is the MySQL URL branch, which tests never take by design.
+    Frontend 137 tests, 99% of statements and **100% of functions**, covering
+    routing, the API client, both page components, and all five UI components.
+  - Frontend function coverage was 79% while statements were at 99%. The gap
+    was inline JSX handlers that delegate to a covered helper — the logic was
+    tested, but the field name each handler passes in was not, so a mistyped
+    key would drop a value on save with nothing to catch it. Parametrised
+    wiring tests now walk every form field and sortable header. Worth keeping
+    at 100%: it is the only check on those string literals.
   - **[decided] Automating the test runs is deferred until after deployment**,
     at which point they run on deploy and nightly (cron or equivalent) on the
     server. Until then the suites are run by hand. Tracked with KAN-14 rather
