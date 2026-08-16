@@ -56,11 +56,11 @@ declaration order.
 | `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
 | `created_at` / `updated_at` | datetime | auto | Server-side defaults |
 
-**[decided] No migration concern for the schema as it stands.** The server
-environment and the MySQL database do not exist yet, so this is simply the
-schema that gets built. Alembic (§5, KAN-10) is worth having before the
-*first* change after real data exists — it is not a prerequisite for the
-initial build.
+**This table is the content of the Alembic baseline revision** (§5). The MySQL
+database does not exist yet, so nothing has been migrated *from* — the baseline
+is simply the starting point, and every change after it ships as its own
+revision. There is no `create_all` fallback: the schema arrives by
+`alembic upgrade head` or not at all.
 
 ### 2.1 Contacts
 
@@ -332,7 +332,14 @@ must be updated to match.
 - **[built]** `/health` endpoint for service monitoring.
 - **[built]** CORS restricted to origins configured via `CORS_ORIGINS`.
 - **[built]** Frontend targets the API via `VITE_API_URL`.
-- **[built]** Tables auto-created on startup via `Base.metadata.create_all`.
+- **[built] Schema is owned by Alembic alone.** The app creates nothing at
+  startup — the `Base.metadata.create_all` call is gone — so `alembic upgrade
+  head` must run before the service starts, and on every deploy carrying a new
+  revision. Starting against an un-migrated database fails on the first query
+  that touches a table, which is deliberate: a service that silently creates
+  what it is missing is a service whose schema nobody can reason about.
+  - `/health` still answers `200` on an un-migrated database, since it touches
+    nothing. A passing health check is not evidence the schema is present.
 - **[decided] The frontend requires SPA fallback routing when served statically.**
   With client-side routes, a direct request for `/applications/10` — a bookmark,
   a refresh, or a shared link — hits the static server for a path that has no
@@ -369,8 +376,23 @@ must be updated to match.
     where `DATABASE_URL` or the `DB_*` settings point at production MySQL —
     would wipe the job search history. The scheduled run must set its own
     `DATABASE_URL` explicitly, and never reuse the service's `.env`.
-- **[gap]** No schema migrations. Any column change requires manual SQL or
-  dropping tables — destructive once real application data exists.
+- **[built] Schema migrations via Alembic** (KAN-15, KAN-16). A column change
+  ships as a revision rather than as manual SQL or a dropped table. The
+  baseline revision matches the models exactly, verified by autogenerate
+  producing an empty diff against a database built from it.
+  - `alembic.ini` carries no URL. `env.py` reads it from the app's own
+    `Settings`, so connection details have one source of truth, no password
+    sits in a committed file, and Alembic honours the same `DATABASE_URL`
+    override the tests use.
+  - **The test suite migrates rather than calling `create_all`.** `create_all`
+    would be slightly faster, but it builds the schema from the models, so it
+    would pass whether or not the migrations work — leaving the mechanism that
+    runs in production untested. Teardown runs `downgrade base`, exercising the
+    downgrade path too. A broken revision now fails the suite, which is the
+    point.
+  - Caveat: the baseline was generated against SQLite because MySQL does not
+    exist yet (KAN-22). Dialect-specific renderings were corrected by hand, but
+    its first run against real MySQL is still its first real test.
 - **[decided] Backup is required.** The stated concern is a hard drive crash, so
   the backup must survive the loss of the machine — a local dump on the same
   disk does not satisfy this. Losing the data means losing the job search
@@ -416,7 +438,6 @@ rather than after.
 |---|---|
 | Authentication + HTTPS | Exposing the app beyond the LAN — static IP / port forwarding. Blocking, see §6.1 |
 | File attachments (resume/cover letter per application) | Wanting per-application document history |
-| Alembic migrations | First schema change after real data exists |
 | Controlled `source` list | Once source values fragment enough to hurt filtering |
 
 ---
