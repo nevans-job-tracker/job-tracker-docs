@@ -131,24 +131,60 @@ worth nothing here, since the app is unusable without its UI.
 
 ## Current state and next steps
 
-The app is feature-complete for its intended use and has never been deployed —
-it has only ever run against a local dev database. Work is tracked as epics in
-Jira rather than listed here.
+The app is feature-complete for its intended use and **has never been
+deployed** — it has only ever run against a local dev database. Detail lives in
+Jira; this is the shape of it.
 
-**Done:** KAN-6 Planning, KAN-8 Search & Navigation,
-KAN-9 Data Integrity & Validation, KAN-11 Test Coverage,
-KAN-12 Detail & Entry Screens, KAN-13 Archive & Restore.
+**Every decision is now made.** What remains is execution against hardware that
+does not exist yet.
 
-**Outstanding:**
+**Done epics:** KAN-6 Planning, KAN-8 Search & Navigation, KAN-9 Data Integrity
+& Validation, KAN-11 Test Coverage, KAN-12 Detail & Entry Screens, KAN-13
+Archive & Restore.
 
-| Epic | Covers |
+**KAN-10 — Data Durability.** Migrations half complete; backup half blocked.
+
+| Story | State |
 |---|---|
-| KAN-10 | Data Durability — Alembic, backup and restore |
-| KAN-14 | Server Environment & Deployment |
+| KAN-15 Alembic baseline | **Done** |
+| KAN-16 Migrations own the schema | **Done** |
+| KAN-17 Backup destination and schedule | **Done** — decided, see §5 |
+| KAN-18 Automate the backups | Blocked on the server |
+| KAN-19 Verify a restore | Blocked on KAN-18 |
+
+**KAN-14 — Server Environment & Deployment.** Only the decision is done.
+
+| Story | State |
+|---|---|
+| KAN-20 Choose the serving stack | **Done** — nginx, single origin |
+| KAN-21 Provision the Linux server | **Next.** Everything else waits on it |
+| KAN-22 MySQL, database, user, schema | Blocked |
+| KAN-23 Backend as a service | Blocked |
+| KAN-24 Build and serve the frontend | Blocked |
+| KAN-25 Verify from a phone on the LAN | Blocked |
+| KAN-26 Automate the test runs | Blocked on KAN-21 only — can run in parallel |
+
+**The next step is KAN-21**, and it needs hardware: a Linux machine on the LAN
+at a pinned address, with Python 3.10–3.12 (not whatever `python3` the
+distribution ships) and Node for building the frontend. Both repos cloned with
+`--recurse-submodules`, or `docs/` arrives empty.
+
+### What already exists for the deploy
+
+Written and committed ahead of the machine, so those stories are copy rather
+than compose:
+
+- `job-tracker-frontend/deploy/nginx.conf` — the site config, both load-bearing
+  lines commented with why they matter.
+- `job-tracker-frontend/.env.production` — `VITE_API_URL=/api`, loaded
+  automatically by `vite build`.
+- Backend README §4 — the systemd unit, binding `127.0.0.1`.
+- Backend README §7 — Alembic commands and the autogenerate caveats.
 
 ## Testing
 
-Both repos have suites, run by hand (automation is deferred to KAN-14):
+Both repos have suites, run by hand (automation is KAN-26, blocked on the
+server):
 
 ```bash
 cd job-tracker-backend && pytest        # 109 tests, 99% statements
@@ -158,3 +194,7 @@ cd job-tracker-frontend && npm test     # 137 tests, 99% statements, 100% functi
 The backend suite runs against throwaway SQLite via a `DATABASE_URL` override,
 so no MySQL is needed. **It empties every table** — never point it at real data.
 `pydantic==2.9.2` has no wheel for Python 3.14; use 3.10–3.12.
+
+It builds its schema by running the migrations, not `create_all`, so a green
+suite also means the revisions apply and reverse cleanly. A revision that does
+not apply fails at session setup rather than inside a test.
