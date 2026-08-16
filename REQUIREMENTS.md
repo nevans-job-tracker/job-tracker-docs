@@ -397,10 +397,55 @@ must be updated to match.
   the backup must survive the loss of the machine — a local dump on the same
   disk does not satisfy this. Losing the data means losing the job search
   history, which is not reconstructable from any other source.
-  - **[open — deliberately deferred]** Where backups go (external drive, another
-    machine on the LAN, off-site/cloud) and on what schedule. Decision postponed
-    until the server environment exists, since the options depend on it.
-  - A restore must be tested, not assumed. An unverified backup is not a backup.
+  - **[decided] Off-site, nightly** (KAN-17).
+
+    **Destination: off-site object storage.** A second copy elsewhere in the
+    house would satisfy the stated concern — a failed disk — but not fire,
+    theft, or flood, where both copies are lost together. Off-site is the only
+    option where no single event takes everything. The cost argument that
+    usually pushes against it does not apply here: the database is two tables
+    whose bulk is `job_description` and `notes`, so even a long search with
+    postings pasted in is single-digit megabytes gzipped. Storage is
+    effectively free at this size, which removes the trade-off.
+
+    The specific provider is deliberately left to KAN-18, where credentials
+    actually get configured. Whatever is chosen must support scripted upload
+    without an interactive login, and per-object deletion so retention can be
+    enforced.
+
+    **Frequency: nightly.** Worst case is losing a day — a handful of entries
+    that are usually still reconstructable from email and browser history.
+    Hourly is affordable at this size but produces 24× the artifacts for a
+    tracker touched a few times a week; weekly risks several days of real
+    re-entry work.
+
+    **Retention: 30 daily, 12 monthly.** At a few MB each that is a few hundred
+    MB at worst. The long tail is not about disk failure — a single recent
+    backup covers that — but about damage noticed late, where every retained
+    copy is already corrupt if the window is too short.
+
+    **Pruning happens in the backup script, after a new upload is confirmed —
+    not by a storage lifecycle rule.** This is the subtle one. A lifecycle rule
+    deletes on age regardless of whether anything new arrived, so if uploads
+    silently break, it keeps deleting until nothing is left, and the failure is
+    invisible until a restore is needed. Deleting only after a confirmed
+    successful upload makes a broken backup fail safe: artifacts pile up
+    instead of evaporating.
+
+    **Dumps are encrypted before upload**, client-side, not merely at rest on
+    the provider. At-rest encryption protects against a stolen datacentre disk;
+    it does not protect against the provider or a compromised account. The
+    contents are not only the user's own data — the `contacts` table holds real
+    people's names, emails, and phone numbers, plus salary figures and notes
+    about named companies.
+
+    **The encryption key must be stored somewhere other than the server.** A
+    key that lives only on the machine being backed up dies with it, and the
+    off-site copies become unreadable — a failure mode that looks exactly like
+    a working backup right up until the restore. Where the key lives is part of
+    KAN-18.
+  - A restore must be tested, not assumed. An unverified backup is not a backup
+    (KAN-19).
   - Tracked in KAN-10.
 
 ---
