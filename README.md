@@ -7,6 +7,11 @@ of truth** for anything that applies to more than one repo.
 |---|---|
 | [`REQUIREMENTS.md`](REQUIREMENTS.md) | What the app must do. Authoritative where it overlaps with anything else. |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | How the project is put together, deployment, security posture, current state. |
+| [`WORKSPACE.md`](WORKSPACE.md) | How the three repos sit together on a working machine, the branch and submodule conventions, and the gotchas that are not visible from the code. |
+
+`WORKSPACE.md` is imported by a short `CLAUDE.md` stub at the workspace root.
+That root directory is not a git repository, so the stub itself cannot be
+versioned — which is exactly why the content lives here instead of there.
 
 ## Consumed by
 
