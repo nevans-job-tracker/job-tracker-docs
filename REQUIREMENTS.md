@@ -33,37 +33,34 @@ in §4.4 and the column choices in §4.2.
 
 An **application** represents one job applied to at one company.
 
-| Field | Type | Required | Status |
+**[built]** — every field below exists in `app/models.py`, listed in
+declaration order.
+
+| Field | Type | Required | Notes |
 |---|---|---|---|
-| `id` | int | auto | [built] |
-| `company` | string(255) | yes | [built] |
-| `role_title` | string(255) | yes | [built] |
-| `job_link` | string(1024) | no | [built] |
-| `source` | string(255) | no | [built] — free text (LinkedIn, referral, …) |
-| `location` | string(255) | no | [built] |
-| `status` | enum | yes, defaults `applied` | [built] |
-| `salary_min` | decimal(10,2) | no | [built] |
-| `salary_max` | decimal(10,2) | no | [built] |
-| `salary_currency` | string(10) | no, defaults `USD` | [built] |
-| `date_applied` | date | yes | [built] |
-| `notes` | text | no | [built] |
-| `created_at` / `updated_at` | datetime | auto | [built] |
+| `id` | int | auto | Primary key, indexed |
+| `company` | string(255) | yes | Indexed — it is the default search and sort target |
+| `role_title` | string(255) | yes | |
+| `job_link` | string(1024) | no | Validated as an http(s) URL server-side |
+| `source` | string(255) | no | Free text (LinkedIn, referral, …) |
+| `location` | string(255) | no | |
+| `status` | enum | yes, defaults `applied` | Seven values, freely assignable — §3 |
+| `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
+| `salary_max` | decimal(10,2) | no | |
+| `salary_currency` | string(10) | no, defaults `USD` | |
+| `date_applied` | date | yes | A future date warns rather than rejects |
+| `notes` | text | no | |
+| `next_action` | string(255) | no | What is owed next ("follow up", "take-home due") |
+| `next_action_date` | date | no | When it is owed; gives the list an actionable sort |
+| `job_description` | text | no | Snapshot of the posting, which outlives the link |
+| `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
+| `created_at` / `updated_at` | datetime | auto | Server-side defaults |
 
-### Planned fields
-
-Not yet built.
-
-| Field | Type | Required | Status |
-|---|---|---|---|
-| `next_action` | string(255) | no | [decided] — what is owed next ("follow up", "take-home due") |
-| `next_action_date` | date | no | [decided] — when it is owed; gives the list an actionable sort |
-| `job_description` | text | no | [decided] — snapshot of the posting, which outlives the link |
-| `archived_at` | datetime, nullable | no | [decided] — archive marker; `NULL` means active (§4.1) |
-
-**[decided] No migration concern for any of this.** The server environment and
-database do not exist yet, so the schema below is simply the schema we build.
-Alembic (§5) remains worth having before the *first* change after real data
-exists — it is not a prerequisite for the initial build.
+**[decided] No migration concern for the schema as it stands.** The server
+environment and the MySQL database do not exist yet, so this is simply the
+schema that gets built. Alembic (§5, KAN-10) is worth having before the
+*first* change after real data exists — it is not a prerequisite for the
+initial build.
 
 ### 2.1 Contacts
 
