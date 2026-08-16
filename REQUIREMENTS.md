@@ -407,7 +407,6 @@ rather than after.
 | Authentication + HTTPS | Exposing the app beyond the LAN — static IP / port forwarding. Blocking, see §6.1 |
 | File attachments (resume/cover letter per application) | Wanting per-application document history |
 | Alembic migrations | First schema change after real data exists |
-| Automated tests | Whenever change becomes risky enough to want a safety net |
 | Controlled `source` list | Once source values fragment enough to hurt filtering |
 
 ---
