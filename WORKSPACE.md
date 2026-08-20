@@ -65,6 +65,56 @@ git checkout main && git merge --ff-only develop && git push origin main && git 
 This repo has only `main`. A docs repo does not need a staging branch, and the
 submodules track `main`.
 
+## Deploying
+
+Deployment is deliberately manual — one deploy every few weeks does not earn a
+pipeline. The ordering below matters, so follow it rather than improvising.
+
+**Backend first**, because restarting it runs the migrations:
+
+```bash
+cd /opt/job-tracker-backend
+git pull --ff-only origin main
+git submodule update --init
+.venv/bin/pip install -r requirements.txt    # only if requirements changed
+sudo systemctl restart job-tracker-backend
+```
+
+The unit's `ExecStartPre` runs `alembic upgrade head`, so the schema is brought
+forward as part of the restart. If a migration fails the service does not
+start, which is the intended behaviour — a service running against a schema
+behind its code is worse than one that is down.
+
+**Then the frontend:**
+
+```bash
+cd /opt/job-tracker-frontend
+git pull --ff-only origin main
+git submodule update --init
+npm ci
+npm run build
+```
+
+nginx serves `dist/` straight off disk, so there is nothing to restart. Only a
+change to `deploy/nginx.conf` needs `sudo nginx -t && sudo systemctl reload
+nginx`.
+
+**Then verify:**
+
+```bash
+/opt/job-tracker-backend/deploy/run-tests.sh
+curl -s -o /dev/null -w '%{http_code}
+' http://localhost/api/health
+```
+
+The same script the nightly timer runs. It is safe against the live database —
+see `REQUIREMENTS.md` §5 for why that is an assertion rather than a convention.
+
+**Cold-load a deep URL** afterwards, e.g. `http://<server>/applications/1`
+pasted into a fresh tab. Clicking around inside the app cannot detect a broken
+SPA fallback, because the router handles in-app navigation without ever
+reaching nginx.
+
 ## Work tracking
 
 Jira project `KAN` on `job-tracker.atlassian.net`. The Atlassian MCP server is
