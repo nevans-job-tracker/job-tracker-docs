@@ -33,10 +33,24 @@ location, status, salary range, date applied, notes, next action, and contacts.
 - **Shared documentation** lives in a third repo, `job-tracker-docs`, consumed
   by both as a git submodule. This keeps one source of truth for requirements
   and architecture without copying files between repos.
-- **Database:** MySQL.
+- **Database:** MariaDB (KAN-22), reached through the MySQL wire protocol.
+
+  Originally specified as MySQL. Changed when the server was actually built:
+  Debian ships MariaDB in its own archive, while Oracle MySQL needs a
+  third-party APT repository and GPG key that then has to be maintained. On a
+  machine whose whole point is running unattended, staying inside Debian's own
+  security-update channel is worth more than matching the original name.
+
+  The application is genuinely indifferent. `mysql+pymysql://` connects
+  unchanged, nothing in the schema is MySQL-specific, and the Alembic baseline
+  applied to MariaDB 10.11 with autogenerate then reporting **no drift** — the
+  strongest available evidence that the models and the deployed schema agree.
 - **Deployment target:** a single local Linux machine the user owns. Both
   frontend and backend run on that same machine, as separate services.
-- **This server does not exist yet.** Standing it up is tracked in KAN-14.
+- **The server exists** (KAN-21): an eMachines ET1810 — single-core 1.6 GHz
+  Celeron 420, 3.6 GiB RAM — running Debian 12 headless at a reserved
+  `192.168.0.151`. Deliberately modest hardware; it comfortably runs both
+  services plus MariaDB.
 
 ## Why FastAPI over Flask
 
@@ -131,12 +145,12 @@ worth nothing here, since the app is unusable without its UI.
 
 ## Current state and next steps
 
-The app is feature-complete for its intended use and **has never been
-deployed** — it has only ever run against a local dev database. Detail lives in
-Jira; this is the shape of it.
+The app is feature-complete for its intended use and is **mid-deployment** —
+the server is built and the database is live, but nothing is being served yet.
+Detail lives in Jira; this is the shape of it.
 
-**Every decision is now made.** What remains is execution against hardware that
-does not exist yet.
+**Every decision is made.** What remains is wiring the two services up on a
+machine that now exists.
 
 **Done epics:** KAN-6 Planning, KAN-8 Search & Navigation, KAN-9 Data Integrity
 & Validation, KAN-11 Test Coverage, KAN-12 Detail & Entry Screens, KAN-13
@@ -152,26 +166,24 @@ Archive & Restore.
 | KAN-18 Automate the backups | Blocked on the server |
 | KAN-19 Verify a restore | Blocked on KAN-18 |
 
-**KAN-14 — Server Environment & Deployment.** Only the decision is done.
+**KAN-14 — Server Environment & Deployment.** Under way.
 
 | Story | State |
 |---|---|
 | KAN-20 Choose the serving stack | **Done** — nginx, single origin |
-| KAN-21 Provision the Linux server | **Next.** Everything else waits on it |
-| KAN-22 MySQL, database, user, schema | Blocked |
-| KAN-23 Backend as a service | Blocked |
-| KAN-24 Build and serve the frontend | Blocked |
-| KAN-25 Verify from a phone on the LAN | Blocked |
-| KAN-26 Automate the test runs | Blocked on KAN-21 only — can run in parallel |
+| KAN-21 Provision the Linux server | **Done** — Debian 12 at `192.168.0.151` |
+| KAN-22 Database, user, schema | **In progress** — MariaDB live, schema migrated |
+| KAN-23 Backend as a service | Next |
+| KAN-24 Build and serve the frontend | After KAN-23 |
+| KAN-25 Verify from a phone on the LAN | After KAN-24 |
+| KAN-26 Automate the test runs | Unblocked — can run in parallel |
 
-**The next step is KAN-21**, and it needs hardware: a Linux machine on the LAN
-at a pinned address, with Python 3.10–3.12 (not whatever `python3` the
-distribution ships) and Node for building the frontend. Both repos cloned with
-`--recurse-submodules`, or `docs/` arrives empty.
+**The next step is KAN-23**: uvicorn under systemd, bound to `127.0.0.1:8000`,
+with `alembic upgrade head` in the deploy path.
 
-### What already exists for the deploy
+### Written ahead of the machine
 
-Written and committed ahead of the machine, so those stories are copy rather
+Committed before the server existed, so the remaining stories are copy rather
 than compose:
 
 - `job-tracker-frontend/deploy/nginx.conf` — the site config, both load-bearing
@@ -183,8 +195,7 @@ than compose:
 
 ## Testing
 
-Both repos have suites, run by hand (automation is KAN-26, blocked on the
-server):
+Both repos have suites, run by hand (automation is KAN-26, now unblocked):
 
 ```bash
 cd job-tracker-backend && pytest        # 109 tests, 99% statements

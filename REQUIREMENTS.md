@@ -56,9 +56,9 @@ declaration order.
 | `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
 | `created_at` / `updated_at` | datetime | auto | Server-side defaults |
 
-**This table is the content of the Alembic baseline revision** (§5). The MySQL
-database does not exist yet, so nothing has been migrated *from* — the baseline
-is simply the starting point, and every change after it ships as its own
+**This table is the content of the Alembic baseline revision** (§5), and it is
+now live on the server as MariaDB 10.11 (KAN-22). Nothing was migrated *from* —
+the baseline was the starting point, and every change after it ships as its own
 revision. There is no `create_all` fallback: the schema arrives by
 `alembic upgrade head` or not at all.
 
@@ -392,9 +392,18 @@ must be updated to match.
     runs in production untested. Teardown runs `downgrade base`, exercising the
     downgrade path too. A broken revision now fails the suite, which is the
     point.
-  - Caveat: the baseline was generated against SQLite because MySQL does not
-    exist yet (KAN-22). Dialect-specific renderings were corrected by hand, but
-    its first run against real MySQL is still its first real test.
+  - The baseline was drafted against SQLite, because no server database existed
+    when it was written. Autogenerate renders against whichever dialect it
+    connected to, so it leaked SQLite spellings — `func.now()` came out as the
+    literal `(CURRENT_TIMESTAMP)`, and index creation used the batch form that
+    only exists to work around SQLite's inability to `ALTER` in place. Both were
+    corrected by hand.
+  - **That correction is now verified, not assumed.** The baseline applied
+    cleanly to MariaDB 10.11 on the real server (KAN-22): all five indexes
+    present, the foreign key cascading, `created_at`/`updated_at` rendering as
+    `current_timestamp()`, and `alembic revision --autogenerate` against the
+    result producing an empty migration. The models and the deployed schema
+    agree on the dialect that actually runs.
 - **[decided] Backup is required.** The stated concern is a hard drive crash, so
   the backup must survive the loss of the machine — a local dump on the same
   disk does not satisfy this. Losing the data means losing the job search
