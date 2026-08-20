@@ -367,17 +367,33 @@ must be updated to match.
     key would drop a value on save with nothing to catch it. Parametrised
     wiring tests now walk every form field and sortable header. Worth keeping
     at 100%: it is the only check on those string literals.
-  - **[decided] Automating the test runs is deferred until after deployment**,
-    at which point they run on deploy and nightly (cron or equivalent) on the
-    server. Until then the suites are run by hand. Tracked with KAN-14 rather
-    than KAN-11.
-  - **The test suite destroys data, so the scheduled run must never touch the
-    live database.** `tests/conftest.py` empties every table after each test.
-    That is safe only because `DATABASE_URL` points at a throwaway SQLite file.
-    A cron job or deploy hook that inherits the service's own environment —
-    where `DATABASE_URL` or the `DB_*` settings point at production MySQL —
-    would wipe the job search history. The scheduled run must set its own
-    `DATABASE_URL` explicitly, and never reuse the service's `.env`.
+  - **[built] The runs are automated** (KAN-26). A systemd timer fires
+    `deploy/run-tests.sh` nightly at 03:00 with `Persistent=true`, so a machine
+    that was off overnight runs once after boot rather than silently skipping.
+    The same script is what to run after a deploy.
+    - **A failure has to be visible, so it is reported at SSH login.** There is
+      no MTA on the machine, and a nightly suite whose failures land in a log
+      nobody reads produces false confidence rather than none. The script
+      writes a status file and an `update-motd.d` hook prints it — one quiet
+      line on success, red with both exit codes on failure.
+  - **The test suite destroys data, so it must never reach the live database.**
+    `tests/conftest.py` empties every table after each test. On the server this
+    margin is thinner than it looks: the backend's `.env` sits in the working
+    directory holding live credentials, and `Settings` is built once at import
+    time — so anything that touched `app.config` before conftest set
+    `DATABASE_URL` would build a production engine and the suite would truncate
+    the job search history.
+    - **The protection is an assertion, not a convention.** conftest checks the
+      engine it actually received and refuses to run unless it is SQLite. That
+      check is on the engine rather than the environment, so it holds no matter
+      who runs pytest, from which directory, carrying which variables.
+    - Verified by reproducing the hazard rather than reasoning about it:
+      importing `app.config` first yields a MySQL engine, and pytest then
+      aborts at conftest load. No tests run and no connection is attempted.
+    - `run-tests.sh` also exports its own `DATABASE_URL` and never sources the
+      service's `.env`. Note this is belt-and-braces only — conftest sets
+      `DATABASE_URL` unconditionally and therefore overrides it. The engine
+      check is what actually protects the database.
 - **[built] Schema migrations via Alembic** (KAN-15, KAN-16). A column change
   ships as a revision rather than as manual SQL or a dropped table. The
   baseline revision matches the models exactly, verified by autogenerate

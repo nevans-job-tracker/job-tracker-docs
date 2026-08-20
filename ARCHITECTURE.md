@@ -204,16 +204,29 @@ than compose:
 
 ## Testing
 
-Both repos have suites, run by hand (automation is KAN-26, now unblocked):
+Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
+hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 109 tests, 99% statements
 cd job-tracker-frontend && npm test     # 137 tests, 99% statements, 100% functions
 ```
 
-The backend suite runs against throwaway SQLite via a `DATABASE_URL` override,
-so no MySQL is needed. **It empties every table** — never point it at real data.
-`pydantic==2.9.2` has no wheel for Python 3.14; use 3.10–3.12.
+The backend suite runs against throwaway SQLite, so no database server is
+needed. **It empties every table**, and `conftest.py` now refuses to start
+unless the engine it received is actually SQLite — see `REQUIREMENTS.md` §5.
+
+Two runtime constraints, both of which bite as confusing errors rather than
+version complaints:
+
+- **Python 3.10–3.12.** `pydantic==2.9.2` has no wheel for 3.14 and fails to
+  build from source, deep inside `pip install`.
+- **Node 22.22.2+ or 24.15+ for the *tests*.** `jsdom@30` declares that range
+  and requires `require(esm)` support. The *build* is happy on Node 18, so
+  Debian 12's packaged Node passes `npm ci && npm run build` and then fails
+  every frontend test with `ERR_REQUIRE_ESM`. The server runs Node 24 from
+  NodeSource — the one third-party apt repository in the deployment, accepted
+  because Debian offers nothing newer and Node 18 is EOL.
 
 It builds its schema by running the migrations, not `create_all`, so a green
 suite also means the revisions apply and reverse cleanly. A revision that does
