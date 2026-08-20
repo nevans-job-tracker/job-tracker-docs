@@ -103,8 +103,7 @@ nginx`.
 
 ```bash
 /opt/job-tracker-backend/deploy/run-tests.sh
-curl -s -o /dev/null -w '%{http_code}
-' http://localhost/api/health
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/api/health
 ```
 
 The same script the nightly timer runs. It is safe against the live database —
@@ -129,9 +128,14 @@ someone time.
 - **Never edit files under a code repo's `docs/`.** It is a detached-HEAD
   submodule checkout; edits there are easy to make by accident and easy to
   lose. Edit this repo instead.
-- **The backend test suite empties every table.** It is safe only because
-  `tests/conftest.py` hardcodes a throwaway SQLite path. Never let it inherit
-  an environment pointing at a real database — see `REQUIREMENTS.md` §5.
+- **The backend test suite empties every table.** `tests/conftest.py` refuses
+  to start unless the engine it received is SQLite, so a misconfigured run
+  aborts rather than truncating live data. Do not remove that check — see
+  `REQUIREMENTS.md` §5.
+- **The frontend tests need a newer Node than the build does.** `jsdom@30`
+  requires Node 22.22.2+ or 24.15+. Debian 12 ships 18, on which `npm ci` and
+  `npm run build` both succeed and give no warning — then every test fails with
+  `ERR_REQUIRE_ESM`. The server runs Node 24 from NodeSource.
 - **The backend needs Python 3.10–3.12.** `pydantic==2.9.2` has no wheel for
   3.14 and fails to build from source, deep inside `pip install`, in a way that
   does not look like a version problem.
@@ -143,9 +147,10 @@ someone time.
 
 ## Current state
 
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the story-by-story breakdown. In
-short: **every design decision is made, and what remains needs hardware that
-does not exist yet.** The next step is KAN-21, provisioning the Linux server.
+**The app is deployed and running** at `http://192.168.0.151/` — nginx serving
+the built frontend, uvicorn on loopback behind it, MariaDB holding the schema.
+Both suites run nightly on the server.
 
-The app has never been deployed and has only ever run against a local dev
-database.
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the story-by-story breakdown. What
+remains is backup automation (KAN-18, KAN-19) and verifying the app from a
+phone on the LAN (KAN-25).
