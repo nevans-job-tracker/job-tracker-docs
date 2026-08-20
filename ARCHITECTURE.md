@@ -47,10 +47,19 @@ location, status, salary range, date applied, notes, next action, and contacts.
   strongest available evidence that the models and the deployed schema agree.
 - **Deployment target:** a single local Linux machine the user owns. Both
   frontend and backend run on that same machine, as separate services.
-- **The server exists** (KAN-21): an eMachines ET1810 — single-core 1.6 GHz
-  Celeron 420, 3.6 GiB RAM — running Debian 12 headless at a reserved
-  `192.168.0.151`. Deliberately modest hardware; it comfortably runs both
-  services plus MariaDB.
+- **The server exists** (KAN-21): an eMachines ET1810 from 2009 — single-core
+  1.6 GHz Celeron 420 — running Debian 12 headless at a reserved
+  `192.168.0.151`.
+
+  Two upgrades before the install make it viable rather than merely
+  sentimental: **RAM raised to 4 GB** (3.6 GiB usable) and the original
+  spinning disk **replaced with an SSD**. Do not read "2009 desktop" as
+  original spec — the performance is unremarkable in a good way because of
+  those two changes, not despite the age.
+
+  Both services plus MariaDB run comfortably. The single core is the only real
+  constraint and is not a binding one at this scale: 43s to build the Python
+  venv from scratch, 18.8s for a production Vite build.
 
 ## Why FastAPI over Flask
 
