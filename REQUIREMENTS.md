@@ -374,6 +374,28 @@ Consequences:
     than discovered.
   - Rounding is to nearest, so `106,500` reads `107K`. Truncating would
     understate the figure.
+  - **[built] The currency is no longer editable from the form** (KAN-38). It
+    was a free-text input, which is how `A$` reached a `Remote (United States)`
+    role and then the list. Given the premise above — every job in this search
+    pays in USD — the input could not record anything useful, only something
+    wrong. A create now takes the API's `USD` default and an edit leaves the
+    stored value alone.
+
+    This is not the free-text-versus-enum argument from `source` and
+    `company_size`: a controlled list would be no better, because the problem
+    is not that the values fragment but that there is nothing to record.
+
+    **The display suffix stays**, and the reasoning runs opposite to the
+    obvious one. It looks like dead code now that the form cannot produce a
+    non-USD value — but that suffix is the only reason the bad data was
+    noticed. Dropped unconditionally, `202K–210K` would have looked perfectly
+    normal and the wrong currency would have sat there indefinitely. The column
+    is still settable through the API, so the label keeps a stray value visible
+    rather than letting it read as dollars.
+
+    `salary_currency` stays in the schema. Dropping it is a migration for no
+    gain, and if non-USD work ever matters the field returns as a controlled
+    list rather than free text.
 
 - **[built]** Free-text search across company, role title, and location,
   debounced 250ms.
