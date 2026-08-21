@@ -192,7 +192,10 @@ already used. **KAN-31** made `date_applied` optional and added an
 carried the first Alembic revision that *alters* an existing table rather
 than creating one. **KAN-36** shows salaries in thousands and drops the USD
 suffix, and **KAN-33** put an Add control on the detail screen so entries can
-be made in succession. Remaining: KAN-32, KAN-35.
+be made in succession. **KAN-32** and **KAN-35** added a years-of-experience
+minimum and a company size on Wellfound's bands, in one revision.
+
+**KAN-30 is complete.**
 
 ## Testing
 
@@ -200,8 +203,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 120 tests, 99% statements
-cd job-tracker-frontend && npm test     # 180 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 135 tests, 99% statements
+cd job-tracker-frontend && npm test     # 195 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

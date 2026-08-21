@@ -44,6 +44,8 @@ declaration order.
 | `job_link` | string(1024) | no | Validated as an http(s) URL server-side |
 | `source` | string(255) | no | Free text (LinkedIn, referral, …) |
 | `location` | string(255) | no | |
+| `company_size` | enum | no | Wellfound's six bands — see below |
+| `years_experience_min` | smallint | no | Minimum only; `0` means entry level and is distinct from blank |
 | `status` | enum | yes, defaults `applied` | Eight values, freely assignable — §3 |
 | `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
 | `salary_max` | decimal(10,2) | no | |
@@ -55,6 +57,46 @@ declaration order.
 | `job_description` | text | no | Snapshot of the posting, which outlives the link |
 | `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
 | `created_at` / `updated_at` | datetime | auto | Server-side defaults |
+
+**[decided] Company size uses Wellfound's bands** (KAN-35), adopted rather
+than invented so the values match what the postings already say:
+
+| Stored value | Label |
+|---|---|
+| `seed` | Seed (1–10 employees) |
+| `early` | Early (11–50 employees) |
+| `mid_size` | Mid-size (51–200 employees) |
+| `large` | Large (201–500 employees) |
+| `very_large` | Very Large (501–1000 employees) |
+| `massive` | Massive (1001+ employees) |
+
+An enum here and free text for `source` is not an inconsistency. `source`
+stayed free text because its real values were not yet known; these are known,
+closed, externally defined, and bounded by employee count, so any company maps
+to exactly one band.
+
+- **The cost is that they are Wellfound's taxonomy, not ours.** If they change
+  it, or exact headcount is wanted later, that is a migration rather than an
+  edit. Recorded so the choice is revisitable rather than mysterious.
+- **The labels carry the ranges, and that is not decoration.** "Large" means
+  nothing without "201–500", and choosing correctly is the entire point of a
+  controlled list. One exported `COMPANY_SIZE_LABELS` map is the only place a
+  band is spelled for a human — the KAN-34 pattern, applied from the start
+  rather than after the duplication has to be cleaned up.
+- **Declared smallest to largest**, which is load-bearing rather than tidy:
+  MariaDB stores an `ENUM` as its ordinal, so this order is what makes sorting
+  by the column mean band order.
+
+**[decided] `years_experience_min` stores the minimum as an integer** (KAN-32).
+"3–5 years" and "5+" both store as `3` and `5`. Chosen over free text so the
+column can be sorted and filtered — *"show everything wanting under five
+years"* is a query worth having — at the accepted cost that the posting's exact
+wording is lost and "senior level" has to be translated by hand.
+
+- Negative values are rejected; nobody means to enter one. No upper bound is
+  imposed, because there is no equally obvious line — 30 is unusual but real.
+- **`0` is a real answer and distinct from blank.** An entry-level posting
+  states no minimum, which is not the same as not stating one.
 
 **[decided] `date_applied` is optional** (KAN-31). The tracker has to hold a
 job you intend to apply for, not only ones already sent — that is the half of
@@ -297,6 +339,21 @@ Consequences:
     `NULLS FIRST` / `NULLS LAST`. The comparison yields 0 or 1 on both it and
     SQLite, so the tests and the deployment agree.
 
+  **Enum columns sort differently on the two dialects, and the tests cannot
+  see it.** MariaDB stores an `ENUM` as its ordinal, so `status` and
+  `company_size` sort in declaration order there. SQLite has no enum type and
+  stores the same columns as `VARCHAR`, so they sort alphabetically — and
+  SQLite is what the test suite runs on. This predates KAN-35; it has been
+  true of `status` since the baseline and was simply never written down.
+
+  - It only affects **ordering**, never which rows come back or what they
+    contain, so it is a display-order wart rather than a correctness problem.
+  - Declaration order for both enums is the meaningful order — lifecycle for
+    `status`, smallest-to-largest for `company_size` — so the *deployment*
+    behaves correctly. The divergence is that a test asserting band order
+    would pass or fail for reasons unrelated to the deployment, which is why
+    none does.
+
   The API accepts a wider set than the table exposes — `salary_min`,
   `salary_max`, and `created_at` are permitted too — and rejects anything else
   with a 422. That whitelist is a security boundary, not a convenience:
@@ -451,9 +508,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 120 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 135 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 180 tests, 99% of statements and **100% of functions**, covering
+    Frontend 195 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
