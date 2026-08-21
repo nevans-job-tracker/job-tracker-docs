@@ -667,11 +667,18 @@ must be updated to match.
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
 
-    - **Nothing records that a rehearsal happened.** `restore.sh` prints its
-      result and exits, so the repeat rule depends on someone remembering —
-      unlike the nightly backup and test runs, whose status files and MOTD
-      hooks exist precisely because an unread result is false confidence.
-      Tracked as KAN-37.
+    - **[built] The rehearsal records itself** (KAN-37). It writes a status
+      file carrying the revision it verified against, and an
+      `update-motd.d` hook reports it at SSH login — so the repeat rule is
+      enforced by the machine rather than by remembering. The third such
+      hook, for the same reason as the other two: an unread result is false
+      confidence rather than none.
+      - **The signal is drift, not age**, unlike the backup hook. Weeks
+        between rehearsals is expected; a migration shipping is what makes
+        one overdue. The hook compares the recorded revision against the
+        newest in `alembic/versions`, read off disk so login stays instant
+        and needs no credentials.
+      - A `MISMATCH` persists until a passing run replaces it.
   - Tracked in KAN-10.
 
 ---

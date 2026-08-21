@@ -172,9 +172,33 @@ sudo systemctl start job-tracker-backup.service
 The artifact filename is date-based, so a second run on the same day replaces
 that day's rather than adding one.
 
-**Nothing on the machine records that a rehearsal happened** — `restore.sh`
-prints to the terminal and exits, so "when was this last verified, and against
-which revision?" is answerable only from memory. That gap is KAN-37.
+**It records what it did** (KAN-37). Every run writes
+`/var/lib/job-tracker/restore-status` — pass or fail — carrying the Alembic
+revision it verified against, and `/etc/update-motd.d/97-job-tracker-restore`
+reports it at SSH login.
+
+The check is **drift, not age**, which is the opposite of the backup hook next
+door. Weeks between rehearsals is expected and fine; what matters is whether a
+migration has shipped since. So it compares the recorded revision against the
+newest revision in `alembic/versions` and says nothing while they agree:
+
+```
+  Job Tracker restore: PASS  (2026-08-21T17:18:26-04:00, 25s, revision 127a196f3c90)
+```
+
+and goes yellow when they do not:
+
+```
+  *** Job Tracker restore rehearsal is out of date ***
+  verified against de0ac7356ab2 on 2026-06-01T02:10:00-04:00
+  newest revision is now 127a196f3c90
+```
+
+Head is read off disk rather than out of the database, so the hook is instant
+and needs no credentials. It therefore counts revisions that have been pulled
+but not yet migrated — which is the right way round, since that is still a
+rehearsal you owe. A `MISMATCH` stays on screen until a passing run replaces
+it; nothing else clears it.
 
 ## Work tracking
 
