@@ -184,8 +184,13 @@ nightly off-site, and a restore has been verified end to end.
 | KAN-19 Verify a restore | **Done** — 42s, from a timer-produced artifact |
 
 **Everything originally planned is now done.** The remaining work is KAN-30, a
-set of usability changes wanted after actually using the tracker — including
-the first Alembic revisions that alter an existing table rather than create it.
+set of usability changes wanted after actually using the tracker.
+
+**KAN-34** replaced three status formatters with the one label map the badge
+already used. **KAN-31** made `date_applied` optional and added an
+`interested` status, so a job can be tracked before it is applied for — and
+carried the first Alembic revision that *alters* an existing table rather
+than creating one. Remaining: KAN-32, KAN-33, KAN-35, KAN-36.
 
 ## Testing
 
@@ -193,8 +198,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 109 tests, 99% statements
-cd job-tracker-frontend && npm test     # 152 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 120 tests, 99% statements
+cd job-tracker-frontend && npm test     # 163 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

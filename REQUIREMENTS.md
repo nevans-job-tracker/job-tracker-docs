@@ -44,11 +44,11 @@ declaration order.
 | `job_link` | string(1024) | no | Validated as an http(s) URL server-side |
 | `source` | string(255) | no | Free text (LinkedIn, referral, …) |
 | `location` | string(255) | no | |
-| `status` | enum | yes, defaults `applied` | Seven values, freely assignable — §3 |
+| `status` | enum | yes, defaults `applied` | Eight values, freely assignable — §3 |
 | `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
 | `salary_max` | decimal(10,2) | no | |
 | `salary_currency` | string(10) | no, defaults `USD` | |
-| `date_applied` | date | yes | A future date warns rather than rejects |
+| `date_applied` | date | no | Empty means not applied for yet, and pairs with status `interested` — §3. A future date warns rather than rejects |
 | `notes` | text | no | |
 | `next_action` | string(255) | no | What is owed next ("follow up", "take-home due") |
 | `next_action_date` | date | no | When it is owed; gives the list an actionable sort |
@@ -56,7 +56,13 @@ declaration order.
 | `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
 | `created_at` / `updated_at` | datetime | auto | Server-side defaults |
 
-**This table is the content of the Alembic baseline revision** (§5), and it is
+**[decided] `date_applied` is optional** (KAN-31). The tracker has to hold a
+job you intend to apply for, not only ones already sent — that is the half of
+a job search where the decisions are still open. An empty date is not a
+missing value to be filled in later by default; it is a statement that the
+application has not gone out, and §3's `interested` status is what says so.
+
+**This table is the baseline revision plus one** (§5), and it is
 now live on the server as MariaDB 10.11 (KAN-22). Nothing was migrated *from* —
 the baseline was the starting point, and every change after it ships as its own
 revision. There is no `create_all` fallback: the schema arrives by
@@ -128,8 +134,27 @@ Each of the following is a separate column on the `contacts` table.
 
 ## 3. Status lifecycle
 
-Seven statuses: `applied`, `phone_screen`, `interview`, `offer`, `rejected`,
-`ghosted`, `withdrawn`.
+Eight statuses: `interested`, `applied`, `phone_screen`, `interview`, `offer`,
+`rejected`, `ghosted`, `withdrawn`.
+
+**[decided] `interested` marks a job not yet applied for** (KAN-31). It is
+the pair to an empty `date_applied` (§2): without it, a job you intend to
+apply for sits labelled **Applied** with nothing to say when, and the status
+filter cannot separate intentions from applications.
+
+- **A create with no date and no stated status is stored as `interested`**,
+  not `applied`. Only an *absent* status is reinterpreted — an explicit
+  `applied` with no date is honoured, because the free-assignment rule below
+  means the user is allowed to say odd things deliberately.
+- The new-entry form mirrors this rather than duplicating it: while the user
+  has not picked a status, clearing the date shows **Interested** and entering
+  one shows **Applied**. The form always sends a status, so without this the
+  select would read Applied while the record being created is not.
+- **In the database it is appended to the enum, not placed first.** MariaDB
+  stores an `ENUM` as its ordinal, so appending is the only change that leaves
+  existing rows meaning what they meant. Display order is the frontend's, where
+  `STATUS_LABELS` lists it first; the consequence is that sorting the list *by
+  status* on MariaDB puts Interested last.
 
 **[decided] Free assignment.** Any status may be set to any other status at any
 time. There is no transition validation, no terminal states, and no required
@@ -154,13 +179,15 @@ Consequences:
 
 ### 4.1 Managing applications
 
-- **[built]** Create an application via a form; company, role title, and date
-  applied are required, everything else optional.
+- **[built]** Create an application via a form; company and role title are
+  required, everything else — including date applied — optional.
 - **[built]** Edit any field of an existing application.
 - **Superseded** — the former delete action is gone, replaced by Archive below.
   There is no DELETE route for applications and no delete call in the API
   client; the route responds 405.
-- **[built]** New applications default to status `applied` and today's date.
+- **[built]** New applications default to today's date and status `applied`.
+  Clearing the date switches the status to `interested` until the user picks
+  one themselves — see §3.
 - **[built] Archive replaces Delete entirely.** There is no delete action in
   the UI. Archiving sets `archived_at`; the record is retained in full and can
   be unarchived at any time. Exposed as `POST /applications/{id}/archive` and
@@ -247,6 +274,28 @@ Consequences:
   date, or date applied — click a header to toggle ascending/descending.
   Default: date applied, descending. Salary is the one displayed column that is
   not sortable.
+
+  **[decided] A NULL sorts as though it were greater than every real value**
+  (KAN-31). Once `date_applied` became optional this stopped being an
+  implementation detail: the default sort is date applied **descending**, and
+  both MariaDB and SQLite put NULLs last in that direction — so the jobs not
+  yet applied to would sink to the bottom, which past 50 rows means below the
+  Load more control (§4.3) and off-screen entirely.
+
+  Treating NULL as the largest value fixes that with a rule rather than a
+  special case. It is also the honest reading: an application not yet sent has
+  no date because that date, if it ever exists, is in the future. So
+  descending puts un-applied jobs at the top where the action is, ascending
+  puts them at the end, and reversing the sort still reverses the whole list —
+  nothing is pinned.
+
+  - Applied to **every** sortable column, not just dates, so there is one
+    rule. Consequence: sorting ascending now puts an empty Location, Source
+    or Next action last, which is the conventional expectation and was
+    previously the other way round.
+  - Implemented as a leading `IS NULL` sort key, because MariaDB has no
+    `NULLS FIRST` / `NULLS LAST`. The comparison yields 0 or 1 on both it and
+    SQLite, so the tests and the deployment agree.
 
   The API accepts a wider set than the table exposes — `salary_min`,
   `salary_max`, and `created_at` are permitted too — and rejects anything else
@@ -357,9 +406,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 109 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 120 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 152 tests, 99% of statements and **100% of functions**, covering
+    Frontend 163 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
@@ -422,6 +471,18 @@ must be updated to match.
     literal `(CURRENT_TIMESTAMP)`, and index creation used the batch form that
     only exists to work around SQLite's inability to `ALTER` in place. Both were
     corrected by hand.
+  - **[built] The first revision that alters an existing table** shipped with
+    KAN-31 — `date_applied` made nullable and `interested` appended to the
+    status enum. Two things about it are deliberate:
+    - It uses `batch_alter_table` for both changes. SQLite cannot ALTER a
+      column in place and the tests run on SQLite; on MariaDB batch mode
+      emits a plain ALTER. One code path rather than a dialect branch.
+    - **The downgrade refuses rather than guesses.** Reversing it is lossy —
+      there is no honest date for a record that never had one. It counts the
+      rows that depend on what the revision added and raises if any exist, so
+      a downgrade either reverses cleanly or does nothing. Left to MySQL
+      outside strict mode, restoring NOT NULL over a NULL writes `0000-00-00`
+      without complaint.
   - **That correction is now verified, not assumed.** The baseline applied
     cleanly to MariaDB 10.11 on the real server (KAN-22): all five indexes
     present, the foreign key cascading, `created_at`/`updated_at` rendering as
