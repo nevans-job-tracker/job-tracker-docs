@@ -151,6 +151,7 @@ someone time.
 the built frontend, uvicorn on loopback behind it, MariaDB holding the schema.
 Both suites run nightly on the server.
 
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the story-by-story breakdown. What
-remains is backup automation (KAN-18, KAN-19) and verifying the app from a
-phone on the LAN (KAN-25).
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the story-by-story breakdown.
+Deployment is complete and verified from a phone. **The one thing outstanding
+is backup** — KAN-18 and KAN-19 — and the app is now holding real data without
+one.

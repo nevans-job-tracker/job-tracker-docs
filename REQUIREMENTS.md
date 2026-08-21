@@ -367,6 +367,14 @@ must be updated to match.
     key would drop a value on save with nothing to catch it. Parametrised
     wiring tests now walk every form field and sortable header. Worth keeping
     at 100%: it is the only check on those string literals.
+  - **Coverage says nothing about layout, and this bit for real.** jsdom does
+    not lay out — it has no viewport, no widths, no overflow. KAN-25 found the
+    new-application form unusable in portrait on a phone, with the required
+    Company and Role title fields pushed off-screen, while all 137 tests passed
+    at 100% function coverage. No unit test in this stack could have caught it.
+    Responsive behaviour is verifiable only against a real viewport, which is
+    why §1 treats a session on the actual device as a requirement rather than a
+    nicety.
   - **[built] The runs are automated** (KAN-26). A systemd timer fires
     `deploy/run-tests.sh` nightly at 03:00 with `Persistent=true`, so a machine
     that was off overnight runs once after boot rather than silently skipping.

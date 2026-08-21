@@ -154,53 +154,42 @@ worth nothing here, since the app is unusable without its UI.
 
 ## Current state and next steps
 
-The app is feature-complete for its intended use and is **mid-deployment** —
-the server is built and the database is live, but nothing is being served yet.
-Detail lives in Jira; this is the shape of it.
-
-**Every decision is made.** What remains is wiring the two services up on a
-machine that now exists.
+**The app is deployed and in daily use** at `http://192.168.0.151/`, entered
+from a phone on the LAN. Detail lives in Jira; this is the shape of it.
 
 **Done epics:** KAN-6 Planning, KAN-8 Search & Navigation, KAN-9 Data Integrity
 & Validation, KAN-11 Test Coverage, KAN-12 Detail & Entry Screens, KAN-13
-Archive & Restore.
+Archive & Restore, **KAN-14 Server Environment & Deployment**.
 
-**KAN-10 — Data Durability.** Migrations half complete; backup half blocked.
+**KAN-14 completed** across seven stories: nginx on a single origin (KAN-20),
+Debian 12 on the eMachines at a reserved address (KAN-21), MariaDB with the
+schema migrated (KAN-22), uvicorn under systemd on loopback (KAN-23), the built
+frontend served with SPA fallback verified (KAN-24), a real session from an
+iPhone (KAN-25), and both suites running nightly (KAN-26).
+
+Three bugs came out of KAN-25 and were fixed in the same pass — the form and
+filter row did not wrap on a phone, and the Applied date broke mid-value.
+All three had one cause: `index.css` contained exactly one media query. The
+table had been made responsive under KAN-12 and nothing else had.
+
+**KAN-10 — Data Durability.** Migrations done; backup outstanding, and now the
+only real gap in the project.
 
 | Story | State |
 |---|---|
 | KAN-15 Alembic baseline | **Done** |
 | KAN-16 Migrations own the schema | **Done** |
 | KAN-17 Backup destination and schedule | **Done** — decided, see §5 |
-| KAN-18 Automate the backups | Blocked on the server |
-| KAN-19 Verify a restore | Blocked on KAN-18 |
+| KAN-18 Automate the backups | **Next** — needs a provider and a key location |
+| KAN-19 Verify a restore | After KAN-18 |
 
-**KAN-14 — Server Environment & Deployment.** Under way.
+**The next step is KAN-18.** The policy is settled — off-site object storage,
+nightly, 30 daily plus 12 monthly, encrypted client-side before upload. What
+remains is choosing a provider and deciding where the encryption key lives,
+which must not be the machine it protects.
 
-| Story | State |
-|---|---|
-| KAN-20 Choose the serving stack | **Done** — nginx, single origin |
-| KAN-21 Provision the Linux server | **Done** — Debian 12 at `192.168.0.151` |
-| KAN-22 Database, user, schema | **In progress** — MariaDB live, schema migrated |
-| KAN-23 Backend as a service | Next |
-| KAN-24 Build and serve the frontend | After KAN-23 |
-| KAN-25 Verify from a phone on the LAN | After KAN-24 |
-| KAN-26 Automate the test runs | Unblocked — can run in parallel |
-
-**The next step is KAN-23**: uvicorn under systemd, bound to `127.0.0.1:8000`,
-with `alembic upgrade head` in the deploy path.
-
-### Written ahead of the machine
-
-Committed before the server existed, so the remaining stories are copy rather
-than compose:
-
-- `job-tracker-frontend/deploy/nginx.conf` — the site config, both load-bearing
-  lines commented with why they matter.
-- `job-tracker-frontend/.env.production` — `VITE_API_URL=/api`, loaded
-  automatically by `vite build`.
-- Backend README §4 — the systemd unit, binding `127.0.0.1`.
-- Backend README §7 — Alembic commands and the autogenerate caveats.
+The app now holds real data with no backup at all. That is the sharpest edge in
+the project as it stands.
 
 ## Testing
 
