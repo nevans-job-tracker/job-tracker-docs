@@ -149,10 +149,17 @@ only as good as the schema it restores into, and an old dump meeting a newer
 schema is exactly the case that fails quietly.
 
 > **A repeat is currently due.** The 42-second rehearsal above ran against the
-> baseline schema. KAN-31 shipped `4500fe76cbd9` on 2026-08-21 — `date_applied`
-> nullable and `interested` appended to the status enum — so the newest
-> artifacts were dumped from a schema the rehearsal never restored into. This is
-> exactly the trigger the paragraph above describes.
+> baseline schema. Two revisions have shipped since, both on 2026-08-21:
+>
+> - `4500fe76cbd9` — `date_applied` nullable, `interested` appended to the
+>   status enum (KAN-31)
+> - `127a196f3c90` — `company_size` and `years_experience_min` added
+>   (KAN-35, KAN-32)
+>
+> So the newest artifacts are dumped from a schema the rehearsal never restored
+> into. This is exactly the trigger the paragraph above describes. Run it after
+> a nightly backup rather than before, so it rehearses against an artifact
+> carrying the current schema.
 
 ## Work tracking
 
