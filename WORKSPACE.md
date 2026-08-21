@@ -116,8 +116,17 @@ reaching nginx.
 
 ## Restoring
 
-Verified end to end on 2026-08-21 (KAN-19): **42 seconds**, from a backup the
-timer produced, using only what would survive the loss of the machine.
+Verified end to end, twice, using only what would survive the loss of the
+machine:
+
+| When | Schema | Result |
+|---|---|---|
+| 2026-08-21 (KAN-19) | baseline `de0ac7356ab2` | **42s**, from an artifact the timer produced |
+| 2026-08-21, after KAN-30 | `127a196f3c90` | **25s**, after two revisions shipped |
+
+The second was the repeat the rule below demands. Its artifact came from
+`job-tracker-backup.service` started by hand rather than by the timer — the
+same unit, script and upload path, only the trigger differed.
 
 ```bash
 /opt/job-tracker-backend/deploy/restore.sh
@@ -148,18 +157,24 @@ recovery, where you would have root on a fresh machine.
 only as good as the schema it restores into, and an old dump meeting a newer
 schema is exactly the case that fails quietly.
 
-> **A repeat is currently due.** The 42-second rehearsal above ran against the
-> baseline schema. Two revisions have shipped since, both on 2026-08-21:
->
-> - `4500fe76cbd9` — `date_applied` nullable, `interested` appended to the
->   status enum (KAN-31)
-> - `127a196f3c90` — `company_size` and `years_experience_min` added
->   (KAN-35, KAN-32)
->
-> So the newest artifacts are dumped from a schema the rehearsal never restored
-> into. This is exactly the trigger the paragraph above describes. Run it after
-> a nightly backup rather than before, so it rehearses against an artifact
-> carrying the current schema.
+**Run it after a backup, not before.** The artifact has to carry the schema you
+want rehearsed, and `restore.sh` takes the newest one in the bucket. Running it
+the moment a migration ships means restoring last night's dump into a comparison
+against a database that has moved on, which reports a revision `MISMATCH` for a
+reason that is not a real problem — and a mismatch you have been told to ignore
+is how you learn to ignore the real ones. Force a backup first if you do not
+want to wait for 02:00:
+
+```bash
+sudo systemctl start job-tracker-backup.service
+```
+
+The artifact filename is date-based, so a second run on the same day replaces
+that day's rather than adding one.
+
+**Nothing on the machine records that a rehearsal happened** — `restore.sh`
+prints to the terminal and exits, so "when was this last verified, and against
+which revision?" is answerable only from memory. That gap is KAN-37.
 
 ## Work tracking
 

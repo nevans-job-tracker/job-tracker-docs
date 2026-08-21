@@ -658,8 +658,20 @@ must be updated to match.
     than only the table shapes. **42 seconds**, procedure recorded in
     `WORKSPACE.md`.
 
+    **Repeated after the first schema changes shipped** (KAN-30), which is the
+    rule below being followed rather than merely stated: `4500fe76cbd9` and
+    `127a196f3c90` had both landed, so the artifact carried a schema the
+    original rehearsal never restored into. **25 seconds**, every comparison
+    matching, including the Alembic revision on both sides.
+
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
+
+    - **Nothing records that a rehearsal happened.** `restore.sh` prints its
+      result and exits, so the repeat rule depends on someone remembering —
+      unlike the nightly backup and test runs, whose status files and MOTD
+      hooks exist precisely because an unread result is false confidence.
+      Tracked as KAN-37.
   - Tracked in KAN-10.
 
 ---
