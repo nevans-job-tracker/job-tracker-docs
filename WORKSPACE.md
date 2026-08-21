@@ -148,6 +148,12 @@ recovery, where you would have root on a fresh machine.
 only as good as the schema it restores into, and an old dump meeting a newer
 schema is exactly the case that fails quietly.
 
+> **A repeat is currently due.** The 42-second rehearsal above ran against the
+> baseline schema. KAN-31 shipped `4500fe76cbd9` on 2026-08-21 — `date_applied`
+> nullable and `interested` appended to the status enum — so the newest
+> artifacts were dumped from a schema the rehearsal never restored into. This is
+> exactly the trigger the paragraph above describes.
+
 ## Work tracking
 
 Jira project `KAN` on `job-tracker.atlassian.net`. The Atlassian MCP server is
