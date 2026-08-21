@@ -379,6 +379,35 @@ must be updated to match.
   rather than a read view with a separate edit mode. Fewer states, one component.
 - **[decided]** The new-entry screen is the same component with no initial
   values, so both screens share look and behaviour by construction.
+- **[built] An "+ Add application" control sits on the detail screen** as well
+  as the list (KAN-33). Saving a new entry lands on its detail screen, so
+  without this every subsequent entry meant a trip back to the list — save,
+  add, save, add is the flow this exists for.
+
+  - **It is deliberately absent on the new-entry screen.** The two screens are
+    the same component, so it would have come "free" — but it would navigate
+    to the route already showing. There is nothing to add to while you are
+    already adding, and a control that does nothing is worse than no control.
+  - **Both routes render that one component, so React reuses the instance
+    rather than remounting.** Going from a record to `/applications/new` must
+    therefore clear the loaded record explicitly, or the new screen comes up
+    carrying its values and one Create makes a duplicate. This is a property
+    of the shared-component decision in this section, not an implementation
+    detail — anything else added to that screen inherits it.
+
+- **[built] Leaving the detail screen with unsaved edits now warns.** The
+  detail screen *is* the edit form, so navigating away discards typing with no
+  trace and retyping is the only recovery. That is the irreversible case §4.1
+  reserves confirmations for — unlike archive, which is one click to undo and
+  therefore prompts for nothing.
+
+  - It guards **both** exits, the back link and the add button. The back link
+    had the hazard first; guarding only the newer one would have been
+    arbitrary.
+  - Cancel and Save are not guarded. Cancel *is* the discard.
+  - It only interrupts when something would genuinely be lost, so an untouched
+    record navigates away silently.
+
 - **[decided]** Archive lives on the detail screen, keeping it away from touch
   targets in the list. Unarchive appears there too when viewing an archived
   application.
@@ -424,7 +453,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 120 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 170 tests, 99% of statements and **100% of functions**, covering
+    Frontend 180 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

@@ -191,7 +191,8 @@ already used. **KAN-31** made `date_applied` optional and added an
 `interested` status, so a job can be tracked before it is applied for — and
 carried the first Alembic revision that *alters* an existing table rather
 than creating one. **KAN-36** shows salaries in thousands and drops the USD
-suffix. Remaining: KAN-32, KAN-33, KAN-35.
+suffix, and **KAN-33** put an Add control on the detail screen so entries can
+be made in succession. Remaining: KAN-32, KAN-35.
 
 ## Testing
 
@@ -200,7 +201,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 120 tests, 99% statements
-cd job-tracker-frontend && npm test     # 170 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 180 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
