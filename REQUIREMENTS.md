@@ -302,6 +302,22 @@ Consequences:
   with a 422. That whitelist is a security boundary, not a convenience:
   `crud.list_applications` resolves the column with `getattr`, so the pattern
   on the route is the only thing preventing an arbitrary attribute lookup.
+- **[decided] Salaries are displayed in thousands, and USD is not labelled**
+  (KAN-36). `106,400–177,300 USD` becomes `106K–177K`. This is list display
+  only — the detail screen keeps raw numbers in its editable fields, and the
+  stored `decimal(10,2)` is untouched, so nothing is lost.
+
+  - **The suffix is dropped only when the currency *is* USD**, not always.
+    Every job in this search pays in USD, so the label is noise on every row of
+    a column that only survives on wider screens. Dropping it unconditionally
+    would show a misleading bare number for a non-USD entry, so
+    `salary_currency` keeps its meaning and a `GBP` row still says `GBP`.
+  - **Values below 1000 are shown unrounded.** An hourly rate entered as `55`
+    would otherwise render as `0K` — not merely ugly but wrong. Decided rather
+    than discovered.
+  - Rounding is to nearest, so `106,500` reads `107K`. Truncating would
+    understate the figure.
+
 - **[built]** Free-text search across company, role title, and location,
   debounced 250ms.
 - **[built]** Filter to a single status, or all statuses.
@@ -408,7 +424,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 120 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 163 tests, 99% of statements and **100% of functions**, covering
+    Frontend 170 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
