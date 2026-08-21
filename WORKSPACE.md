@@ -114,6 +114,40 @@ pasted into a fresh tab. Clicking around inside the app cannot detect a broken
 SPA fallback, because the router handles in-app navigation without ever
 reaching nginx.
 
+## Restoring
+
+Verified end to end on 2026-08-21 (KAN-19): **42 seconds**, from a backup the
+timer produced, using only what would survive the loss of the machine.
+
+```bash
+/opt/job-tracker-backend/deploy/restore.sh
+```
+
+It takes the newest artifact from B2 unless given a filename, loads it into a
+scratch database, and compares against the live one — row counts, the Alembic
+revision, and spot-checks that read back the archived record and the contact
+join rather than only counting rows.
+
+**It asks you to type the passphrase, and will not read
+`~/.config/job-tracker/backup.pass`.** That is deliberate and is the point of
+the exercise. The scenario is that this machine is gone, so every off-site
+artifact is unreadable unless the passphrase exists somewhere else. If the
+decrypt fails using the copy from the password manager, *that failure is the
+finding* — not a broken script.
+
+This nearly went wrong for real: during KAN-18 the password-manager entry did
+not save and the passphrase existed only on the machine being backed up. A
+restore reading the server's copy would have passed happily in that state,
+which is worse than not testing at all.
+
+`sudo` is needed to create the scratch database, because the application user
+is scoped to its own schema and cannot create another. That matches a real
+recovery, where you would have root on a fresh machine.
+
+**Repeat it after any schema change ships through Alembic.** A restore path is
+only as good as the schema it restores into, and an old dump meeting a newer
+schema is exactly the case that fails quietly.
+
 ## Work tracking
 
 Jira project `KAN` on `job-tracker.atlassian.net`. The Atlassian MCP server is
@@ -151,7 +185,9 @@ someone time.
 the built frontend, uvicorn on loopback behind it, MariaDB holding the schema.
 Both suites run nightly on the server.
 
+Backups run nightly to off-site object storage, encrypted before upload, and
+**a restore has been verified end to end** — see Restoring above.
+
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the story-by-story breakdown.
-Deployment is complete and verified from a phone. **The one thing outstanding
-is backup** — KAN-18 and KAN-19 — and the app is now holding real data without
-one.
+Everything originally planned is done. Outstanding work is KAN-30, a set of
+usability changes wanted after real use.

@@ -479,8 +479,24 @@ must be updated to match.
     off-site copies become unreadable — a failure mode that looks exactly like
     a working backup right up until the restore. Where the key lives is part of
     KAN-18.
-  - A restore must be tested, not assumed. An unverified backup is not a backup
-    (KAN-19).
+  - **[built] A restore has been verified** (KAN-19), not assumed — an
+    unverified backup is not a backup.
+
+    Rehearsed against an artifact the timer produced, fetched from the
+    provider, and decrypted with the passphrase held in the password manager
+    rather than the copy on the server. That distinction is the substance of
+    the test: it is the only check that catches a wrong off-server key, and it
+    nearly failed for real when the password-manager entry did not save during
+    KAN-18, leaving the passphrase only on the machine being backed up.
+
+    Restored into a scratch database and compared against the live one: row
+    counts, the Alembic revision, and read-backs of the archived record and the
+    contact join — so `archived_at` and the foreign key are exercised rather
+    than only the table shapes. **42 seconds**, procedure recorded in
+    `WORKSPACE.md`.
+
+    Repeat after any schema change ships through Alembic. A restore path is
+    only as good as the schema it restores into.
   - Tracked in KAN-10.
 
 ---

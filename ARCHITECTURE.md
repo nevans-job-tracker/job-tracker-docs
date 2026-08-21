@@ -172,24 +172,20 @@ filter row did not wrap on a phone, and the Applied date broke mid-value.
 All three had one cause: `index.css` contained exactly one media query. The
 table had been made responsive under KAN-12 and nothing else had.
 
-**KAN-10 — Data Durability.** Migrations done; backup outstanding, and now the
-only real gap in the project.
+**KAN-10 — Data Durability. Done.** Migrations own the schema, backups run
+nightly off-site, and a restore has been verified end to end.
 
 | Story | State |
 |---|---|
 | KAN-15 Alembic baseline | **Done** |
 | KAN-16 Migrations own the schema | **Done** |
 | KAN-17 Backup destination and schedule | **Done** — decided, see §5 |
-| KAN-18 Automate the backups | **Next** — needs a provider and a key location |
-| KAN-19 Verify a restore | After KAN-18 |
+| KAN-18 Automate the backups | **Done** — Backblaze B2, nightly, encrypted |
+| KAN-19 Verify a restore | **Done** — 42s, from a timer-produced artifact |
 
-**The next step is KAN-18.** The policy is settled — off-site object storage,
-nightly, 30 daily plus 12 monthly, encrypted client-side before upload. What
-remains is choosing a provider and deciding where the encryption key lives,
-which must not be the machine it protects.
-
-The app now holds real data with no backup at all. That is the sharpest edge in
-the project as it stands.
+**Everything originally planned is now done.** The remaining work is KAN-30, a
+set of usability changes wanted after actually using the tracker — including
+the first Alembic revisions that alter an existing table rather than create it.
 
 ## Testing
 
