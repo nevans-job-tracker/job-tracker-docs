@@ -194,7 +194,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 109 tests, 99% statements
-cd job-tracker-frontend && npm test     # 137 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 152 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

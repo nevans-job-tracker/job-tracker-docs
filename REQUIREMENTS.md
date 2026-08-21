@@ -359,7 +359,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 109 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 137 tests, 99% of statements and **100% of functions**, covering
+    Frontend 152 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
