@@ -147,6 +147,11 @@ Each of the following is a separate column on the `contacts` table.
 - **[built]** The list endpoint returns applications *without* contacts; only
   the detail endpoint embeds them. Loading contacts per row would mean one query
   per application on every list request.
+  - **[built] `include_contacts` opts back in** (KAN-39), for the CSV export
+    and nothing else. It is a parameter rather than a change of default, and
+    it eager-loads with `selectinload`, so it costs one extra query for the
+    whole page rather than one per row — the cost the rule above exists to
+    avoid. The list screen never sets it.
 
 ### Field-level rules
 
@@ -397,6 +402,43 @@ Consequences:
     gain, and if non-USD work ever matters the field returns as a controlled
     list rather than free text.
 
+- **[built] The filtered list exports to CSV** (KAN-39). A green **Export
+  CSV** control sits left of **+ Add application**, producing a file that
+  opens in Excel. CSV rather than `.xlsx` because it needs no Excel-specific
+  library on either side.
+
+  - **Every field, plus contacts** — not the table's columns. The table hides
+    most fields because of screen width, which is not a constraint a
+    spreadsheet has.
+  - **Values are written for calculating, not for reading.** `salary_min` and
+    `salary_max` are two numeric columns rather than the list's `106K–177K`,
+    which Excel would treat as text; dates stay ISO so Excel parses them;
+    `status` and `company_size` carry their readable labels. Timestamps have
+    their `T` replaced with a space, which is the difference between Excel
+    seeing a date-time and seeing a string.
+  - **Every row the filters match, not the page on screen.** The list
+    paginates at 50 (§4.3); the filter is the intent and the page size is an
+    artifact of scrolling. Handing over 50 of 120 rows without saying so is
+    the same silent truncation §4.3 exists to have fixed.
+  - **One row per application, contacts flattened into numbered columns**
+    (`Contact 1 name`, …), widened to the busiest exported application. A row
+    per *contact* would repeat the application, so any sum over salary would
+    multiply-count it and the row count would stop meaning "applications".
+    Two files joined on `application_id` is the properly relational answer and
+    is where to go if applications ever routinely carry many contacts.
+  - **The file is built in the frontend**, not the API. `STATUS_LABELS` and
+    `COMPANY_SIZE_LABELS` live there, and a server-side exporter would need a
+    second copy of both in Python — the duplication KAN-34 existed to remove.
+  - **Three things Excel would otherwise get wrong**, each guarded and tested:
+    a cell starting `=`, `+`, `-` or `@` is *executed* as a formula, and notes
+    are pasted from postings, so string fields are prefixed with an apostrophe;
+    the file opens with a UTF-8 BOM, without which Excel on Windows mangles
+    every en-dash and the company-size labels are full of them; and fields are
+    quoted per RFC 4180 with embedded quotes doubled, because job descriptions
+    carry commas, quotes and newlines.
+  - Disabled when the filters match nothing — a headers-only file is a puzzle
+    rather than a deliverable.
+
 - **[built]** Free-text search across company, role title, and location,
   debounced 250ms.
 - **[built]** Filter to a single status, or all statuses.
@@ -530,9 +572,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 135 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 140 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 195 tests, 99% of statements and **100% of functions**, covering
+    Frontend 228 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
