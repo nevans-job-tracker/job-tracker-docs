@@ -195,7 +195,9 @@ suffix, and **KAN-33** put an Add control on the detail screen so entries can
 be made in succession. **KAN-32** and **KAN-35** added a years-of-experience
 minimum and a company size on Wellfound's bands, in one revision.
 
-**KAN-30 is complete.**
+**KAN-30 is complete.** Since then: **KAN-37** made the restore rehearsal
+record itself, **KAN-38** removed the free-text currency input, and
+**KAN-39** added a CSV export of the filtered list.
 
 ## Testing
 
@@ -203,8 +205,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 135 tests, 99% statements
-cd job-tracker-frontend && npm test     # 196 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 140 tests, 99% statements
+cd job-tracker-frontend && npm test     # 228 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
