@@ -758,6 +758,11 @@ must be updated to match.
     original rehearsal never restored into. **25 seconds**, every comparison
     matching, including the Alembic revision on both sides.
 
+    **Repeated a third time after KAN-40** shipped `53f76402812f` — **15
+    seconds**, every comparison matching. That one is different in kind: it
+    happened because the machine asked for it. Nobody remembered the rule; the
+    MOTD hook below noticed the migration and said so at login.
+
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
 

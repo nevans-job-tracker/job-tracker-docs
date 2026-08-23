@@ -116,17 +116,24 @@ reaching nginx.
 
 ## Restoring
 
-Verified end to end, twice, using only what would survive the loss of the
-machine:
+Verified end to end, three times, using only what would survive the loss of
+the machine:
 
 | When | Schema | Result |
 |---|---|---|
 | 2026-08-21 (KAN-19) | baseline `de0ac7356ab2` | **42s**, from an artifact the timer produced |
 | 2026-08-21, after KAN-30 | `127a196f3c90` | **25s**, after two revisions shipped |
+| 2026-08-23, after KAN-40 | `53f76402812f` | **15s**, the first one the machine asked for |
 
-The second was the repeat the rule below demands. Its artifact came from
-`job-tracker-backup.service` started by hand rather than by the timer — the
-same unit, script and upload path, only the trigger differed.
+Each repeat was the rule below being followed. The second and third ran
+against artifacts from `job-tracker-backup.service` started by hand rather
+than by the timer — the same unit, script and upload path, only the trigger
+differed.
+
+**The third is the one worth noting**: nobody remembered it. KAN-40's
+migration landed, and the login banner started saying the rehearsal was out of
+date on its own. That is the drift check below working as designed rather than
+as a test.
 
 ```bash
 /opt/job-tracker-backend/deploy/restore.sh
