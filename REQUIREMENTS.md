@@ -391,6 +391,7 @@ Consequences:
   | Location | Wider screens only |
   | Salary | Wider screens only |
   | Source | Wider screens only — **[built]**, the first responsive column |
+  | Job link | Wider screens only — an icon, **[built]** KAN-45 |
 
   **[decided] The narrow-screen breakpoint is 900px.** The target mobile device
   is an **iPhone 17 Pro**: 402 × 874 CSS pixels, device pixel ratio 3. That means
@@ -411,9 +412,15 @@ Consequences:
   on a phone. This keeps `next_action` — the most actionable field — visible on
   mobile within the four-column budget.
 
-  **Link and row actions are dropped** — both move to the detail screen. Rows
-  become clickable (§4.4), so a per-row Delete button is a mis-tap hazard on
-  touch.
+  **Row actions are dropped** — they move to the detail screen. Rows become
+  clickable (§4.4), so a per-row Delete button is a mis-tap hazard on touch.
+
+  **The link came back as an icon** (KAN-45), and the reasoning that removed
+  it is what allows it. It was dropped alongside the row actions, but those
+  were removed because mis-tapping *Delete* is destructive — opening a tab by
+  accident is annoying and nothing more. It is `col-wide`, so the mobile
+  four-column budget is untouched and on a phone there is nothing to mis-tap
+  at all; the phone opens postings from the detail screen instead (§4.4).
 
 - **[decided]** The mobile column budget is resolved by demoting Role rather
   than abandoning the table. Narrow screens show Company, Status, Next action,
@@ -668,6 +675,28 @@ must be updated to match.
     against a dark page, so each carries its own pair chosen to sit at the same
     visual weight as the surface behind it.
 
+- **[built] The job posting opens in a new tab** (KAN-45), from the list's
+  link column and from an **Open posting** control beside the Job link field
+  here. The stored URL was previously unopenable from anywhere — on this
+  screen it was an editable input, so reading a posting meant selecting the
+  text out of the field and pasting it.
+
+  - **This screen is the phone's path to it**, which is why the list's icon
+    can afford to be `col-wide` (§4.2).
+  - **Only an `http(s)` value renders a link.** The API validates `job_link`
+    on save, but this screen renders *unsaved* form state, so the check has to
+    happen here too — a half-typed or pasted `javascript:` value shows no link
+    rather than a live one. It is parsed with the URL constructor rather than
+    matched with a pattern, because the parser strips tabs and newlines before
+    reading the scheme and a regex on the raw string does not.
+  - **Both links carry `rel="noopener"`.** Without it the opened posting gets
+    a handle on `window.opener` and can navigate the tab it came from.
+  - **The row's keyboard handler now ignores events from inside it.** That
+    handler calls `preventDefault`, so an anchor in a clickable row is not
+    merely a double-action hazard — pressing Enter on the link *suppressed the
+    anchor* and opened the detail screen instead, which is the opposite of
+    what was pressed.
+
 - **[decided]** Archive lives on the detail screen, keeping it away from touch
   targets in the list. Unarchive appears there too when viewing an archived
   application.
@@ -735,7 +764,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 164 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 337 tests, 99% of statements and **100% of functions**, covering
+    Frontend 368 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

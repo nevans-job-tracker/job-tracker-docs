@@ -217,6 +217,15 @@ also needs §7 revising, since reporting is still listed there as a non-goal.
 59 hardcoded colours into role-named tokens so the stylesheet could be themed
 at all.
 
+**KAN-45** made the job posting openable — an icon column in the list and a
+control on the detail screen. The stored `job_link` had never been reachable
+from anywhere in the UI, and §4.2 had recorded it moving to the detail screen
+when the column was dropped, which never happened.
+
+**KAN-46** is open: salary ranges wrap at the en-dash even on a wide desktop,
+because the table's auto layout sizes the column to the widest unbreakable
+run rather than the whole string.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -224,7 +233,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 164 tests, 99% statements
-cd job-tracker-frontend && npm test     # 337 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 368 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
