@@ -208,6 +208,11 @@ recording is the only part with a deadline. A timeline and a status-over-time
 graph are the stories it unblocks. **KAN-43** built the first of those: a
 timeline on the detail screen, and the first thing that reads the history.
 
+**The graph is deliberately deferred, not forgotten.** Every application
+currently has one history row, so a chart of it would be a flat line. It is
+worth building once the recording has accumulated something to show — and it
+also needs §7 revising, since reporting is still listed there as a non-goal.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
