@@ -55,6 +55,7 @@ declaration order.
 | `next_action` | string(255) | no | What is owed next ("follow up", "take-home due") |
 | `next_action_date` | date | no | When it is owed; gives the list an actionable sort |
 | `job_description` | text | no | Snapshot of the posting, which outlives the link |
+| `cover_letter` | text | no | What was written to this employer — see below |
 | `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
 | `created_at` / `updated_at` | datetime | auto | Server-side defaults |
 
@@ -97,6 +98,29 @@ wording is lost and "senior level" has to be translated by hand.
   imposed, because there is no equally obvious line — 30 is unusual but real.
 - **`0` is a real answer and distinct from blank.** An entry-level posting
   states no minimum, which is not the same as not stating one.
+
+**[decided] The cover letter is stored as text, not as a file** (KAN-40).
+§6.2 deferred *file attachments*; the requirement turned out to be narrower —
+the text is what is wanted, and a PDF can be regenerated from it. That
+distinction is worth almost all of the work:
+
+- **The restore rehearsal keeps meaning what it means.** KAN-19 and KAN-37
+  verify the *database* restores. A second store on the filesystem would have
+  left a green `RESTORE VERIFIED` sitting beside a bucket missing every cover
+  letter — the false-confidence failure this project keeps designing against.
+- **No new encryption path.** §5 requires client-side encryption before
+  upload, and a cover letter carries the owner's name and history. Syncing
+  files would have needed `rclone crypt` built first.
+- **Nothing can diverge**: no row pointing at a missing file, no orphan file.
+- It is searchable in a way a PDF never would be — though not yet, see the
+  gap in §4.2.
+
+Measured, for a one-page letter: **~1.3 KB as text, ~1.6 KB as HTML, 40–80 KB
+as a PDF.** The detail screen offers a **Download as HTML** control that wraps
+the stored text in a small document — paragraphs and typography intact, opens
+in Word or Google Docs, ready to export as the PDF that gets attached. The
+HTML is *generated from escaped text* rather than stored, so nothing
+persisted can execute and no sanitiser is needed.
 
 **[decided] `date_applied` is optional** (KAN-31). The tracker has to hold a
 job you intend to apply for, not only ones already sent — that is the half of
@@ -429,6 +453,10 @@ Consequences:
   - **The file is built in the frontend**, not the API. `STATUS_LABELS` and
     `COMPANY_SIZE_LABELS` live there, and a server-side exporter would need a
     second copy of both in Python — the duplication KAN-34 existed to remove.
+  - `cover_letter` is included, on the same "every field" rule. Note this
+    compounds the point below: the file already leans on `job_description`,
+    and this is a second long-form column. If the spreadsheet becomes
+    unwieldy they are the two to drop, and they should go together.
   - **Three things Excel would otherwise get wrong**, each guarded and tested:
     a cell starting `=`, `+`, `-` or `@` is *executed* as a formula, and notes
     are pasted from postings, so string fields are prefixed with an apostrophe;
@@ -443,9 +471,11 @@ Consequences:
   debounced 250ms.
 - **[built]** Filter to a single status, or all statuses.
 - **[built]** Result count displayed; empty state when no applications exist.
-- **[gap]** Search does not cover `notes` or `source`. Notes are where the
-  useful detail lives (recruiter names, interview feedback) and are currently
-  unsearchable.
+- **[gap]** Search does not cover `notes`, `source`, `job_description` or
+  `cover_letter`. Notes are where the useful detail lives (recruiter names,
+  interview feedback), and *"which letter did I say that in?"* is a natural
+  question the tracker cannot answer. The case for closing this grows with
+  every long-text field added — KAN-40 made it four.
 - **[built]** Search, filter, and sort state **persists in the URL**, not in
   local storage. It survives a reload, works with the browser back button, and
   makes a filtered view linkable. URL state is also inspectable in a way local
@@ -572,9 +602,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 140 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 145 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 228 tests, 99% of statements and **100% of functions**, covering
+    Frontend 254 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
@@ -779,7 +809,7 @@ rather than after.
 | Item | Trigger |
 |---|---|
 | Authentication + HTTPS | Exposing the app beyond the LAN — static IP / port forwarding. Blocking, see §6.1 |
-| File attachments (resume/cover letter per application) | Wanting per-application document history |
+| File attachments — the *file itself* | Needing the exact artifact that was sent. The text half is built (KAN-40), so this is now only about fidelity to the original document |
 | Controlled `source` list | Once source values fragment enough to hurt filtering |
 
 ---

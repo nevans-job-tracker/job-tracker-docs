@@ -197,7 +197,9 @@ minimum and a company size on Wellfound's bands, in one revision.
 
 **KAN-30 is complete.** Since then: **KAN-37** made the restore rehearsal
 record itself, **KAN-38** removed the free-text currency input, and
-**KAN-39** added a CSV export of the filtered list.
+**KAN-39** added a CSV export of the filtered list. **KAN-40** stores the
+cover letter as text, downloadable as HTML — the cheap half of the file
+attachments §6.2 defers.
 
 ## Testing
 
@@ -205,8 +207,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 140 tests, 99% statements
-cd job-tracker-frontend && npm test     # 228 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 145 tests, 99% statements
+cd job-tracker-frontend && npm test     # 254 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
