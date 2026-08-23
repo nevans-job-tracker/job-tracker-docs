@@ -116,11 +116,36 @@ distinction is worth almost all of the work:
   gap in §4.2.
 
 Measured, for a one-page letter: **~1.3 KB as text, ~1.6 KB as HTML, 40–80 KB
-as a PDF.** The detail screen offers a **Download as HTML** control that wraps
-the stored text in a small document — paragraphs and typography intact, opens
-in Word or Google Docs, ready to export as the PDF that gets attached. The
-HTML is *generated from escaped text* rather than stored, so nothing
-persisted can execute and no sanitiser is needed.
+as a PDF.** The detail screen offers a **Download as HTML** control producing a
+small document — paragraphs and typography intact, opens in Word or Google
+Docs, ready to export as the PDF that gets attached.
+
+**[built] A `.docx` can be uploaded and converted** (KAN-41), so a letter
+written in Word keeps its bold, lists and headings instead of being retyped.
+
+- **The conversion happens in the browser**, lazy-loaded, and the file
+  *structurally never reaches the server* — no upload endpoint, no multipart,
+  no CPU on a single core, nothing to clean up. The converted HTML goes out
+  through the ordinary PATCH.
+- **`.docx` only, deliberately.** A `.docx` is structured XML where paragraphs
+  and bold runs exist as data. A PDF is positioned glyphs with no structure:
+  paragraph breaks would be guessed, bold would be gone, a letterhead would
+  land in the body as prose. A PDF is also a *rendering of the `.docx` you
+  already have*. If only a PDF exists, open it and paste — the viewer already
+  does that extraction, for no bytes and no dependency.
+- **The column now holds either prose or HTML**, and one function reconciles
+  them on read. No format flag on the row and no migration: `Text` holds both,
+  and anything not recognised as our HTML is escaped as text — wrong-looking at
+  worst, never unsafe.
+- **An allowlist sanitiser runs on the way in and on the way out.**
+  "Constrained by the converter" is not "sanitised", and the column is still
+  writable through the API. `IMG` is deliberately excluded, and that is
+  load-bearing: the converter inlines embedded images as base64 data URIs, so a
+  letterhead logo would turn a 2 KB column into 100 KB+ and then sit in every
+  nightly backup forever.
+- **Cost:** one runtime dependency, +26 packages. Lazy-loaded, so the initial
+  bundle is unchanged at ~207 KB and the converter's 130 KB gzipped is fetched
+  only by someone who actually uploads.
 
 **[decided] `date_applied` is optional** (KAN-31). The tracker has to hold a
 job you intend to apply for, not only ones already sent — that is the half of
@@ -453,7 +478,9 @@ Consequences:
   - **The file is built in the frontend**, not the API. `STATUS_LABELS` and
     `COMPANY_SIZE_LABELS` live there, and a server-side exporter would need a
     second copy of both in Python — the duplication KAN-34 existed to remove.
-  - `cover_letter` is included, on the same "every field" rule. Note this
+  - `cover_letter` is included, on the same "every field" rule, but **with its
+    markup stripped back to prose** — a spreadsheet cell full of `<p>` tags is
+    noise, and this file's rule is values written to be worked with. Note it
     compounds the point below: the file already leans on `job_description`,
     and this is a second long-form column. If the spreadsheet becomes
     unwieldy they are the two to drop, and they should go together.
@@ -604,7 +631,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 145 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 254 tests, 99% of statements and **100% of functions**, covering
+    Frontend 286 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

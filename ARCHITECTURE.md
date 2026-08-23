@@ -199,7 +199,8 @@ minimum and a company size on Wellfound's bands, in one revision.
 record itself, **KAN-38** removed the free-text currency input, and
 **KAN-39** added a CSV export of the filtered list. **KAN-40** stores the
 cover letter as text, downloadable as HTML — the cheap half of the file
-attachments §6.2 defers.
+attachments §6.2 defers — and **KAN-41** converts an uploaded `.docx` into it
+in the browser, which is the first runtime dependency added since the router.
 
 ## Testing
 
@@ -208,7 +209,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 145 tests, 99% statements
-cd job-tracker-frontend && npm test     # 254 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 286 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
