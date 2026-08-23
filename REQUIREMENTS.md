@@ -202,6 +202,56 @@ Each of the following is a separate column on the `contacts` table.
     whole page rather than one per row — the cost the rule above exists to
     avoid. The list screen never sets it.
 
+### 2.2 Status history
+
+**[built] Every status change is recorded** (KAN-42), in a `status_changes`
+table related many-to-one to applications.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `id` | int | auto | |
+| `application_id` | int, FK → `applications.id` | yes | Cascades; indexed with `changed_at` |
+| `from_status` | enum | no | `NULL` opens an application's history rather than marking a transition |
+| `to_status` | enum | yes | Indexed with `changed_at` |
+| `changed_at` | datetime | auto | |
+
+**Nothing reads it yet, and that is the point.** History cannot be
+reconstructed after the fact — the applications table holds only the current
+status, and `updated_at` says when a row last changed rather than what it
+changed from. So the recording shipped on its own, ahead of any timeline or
+graph, because every day without it is a day permanently missing from whatever
+gets built on it later.
+
+- **`changed_at` is when the *record* was edited, not when the thing
+  happened.** A rejection email left unread for a week charges that week to the
+  previous status. Fine for "three weeks in Applied"; potentially most of the
+  value for "five days in phone screen". **The fix, deferred with a trigger:**
+  a second `effective_at` column, defaulting to `changed_at` and correctable by
+  hand — to be added the first time a recorded duration is visibly wrong enough
+  to matter.
+- **`date_applied` does not have this problem**, being a real-world date the
+  user types. A graph of *applications per day* should therefore read
+  `date_applied`, not this table. This table is what makes every *other* status
+  answerable.
+- **Only a real move is recorded.** The detail screen sends every field on
+  every save, so the status arrives unchanged constantly; recording those would
+  bury the transitions and make every computed duration read as zero.
+- **The recording is a convention, not an assertion.** It is called explicitly
+  from `crud`, so it fires only where someone remembered to call it. A test
+  parses `crud.py` and fails if a third function starts assigning attributes,
+  because history going silently incomplete is the worst failure mode — nothing
+  looks wrong until a timeline months later turns out to have holes.
+- **The five pre-existing applications got one row each at the migration
+  timestamp**, with a `NULL` from_status. We knew each one's current status but
+  not how it got there, so a row claiming `created_at → current status` would
+  have been fiction. Stamping "as of now, it is this" is true and invents
+  nothing — at the cost that for those five, history begins at the migration
+  rather than at creation.
+- Its downgrade refuses while any row exists, and the reason is stronger than
+  for the revisions before it: those dropped columns whose values could be
+  retyped from a posting, whereas this is the only copy of when each status
+  changed.
+
 ### Field-level rules
 
 - **[built]** `salary_min` must not exceed `salary_max`. Enforced in the route
@@ -267,7 +317,9 @@ Consequences:
 - No backend transition validation will be added.
 - No time-based automation sets `ghosted`; it is a manual judgement call.
 - Any future reporting on the lifecycle (e.g. time-in-stage) cannot assume a
-  monotonic progression through statuses.
+  monotonic progression through statuses. §2.2 now records every transition,
+  including backwards ones, so a timeline reading it must handle
+  `rejected → interview` as ordinary.
 
 ---
 
@@ -629,7 +681,7 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 145 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 157 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
     Frontend 286 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.

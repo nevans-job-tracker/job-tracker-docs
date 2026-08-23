@@ -202,13 +202,18 @@ cover letter as text, downloadable as HTML — the cheap half of the file
 attachments §6.2 defers — and **KAN-41** converts an uploaded `.docx` into it
 in the browser, which is the first runtime dependency added since the router.
 
+**KAN-42** started recording every status change. Nothing reads it yet — it
+shipped alone because history cannot be reconstructed afterwards, so the
+recording is the only part with a deadline. A timeline and a status-over-time
+graph are the stories it unblocks.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 145 tests, 99% statements
+cd job-tracker-backend && pytest        # 157 tests, 99% statements
 cd job-tracker-frontend && npm test     # 286 tests, 99% statements, 100% functions
 ```
 
