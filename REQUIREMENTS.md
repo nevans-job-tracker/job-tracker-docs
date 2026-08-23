@@ -247,6 +247,13 @@ gets built on it later.
   have been fiction. Stamping "as of now, it is this" is true and invents
   nothing — at the cost that for those five, history begins at the migration
   rather than at creation.
+- **[built] The detail screen shows a timeline** (KAN-43) — each status with
+  when it started and how long it lasted, the running one marked. **Durations
+  are inferred on read**, not stored: each entry runs until the next, and the
+  last runs until now. Served by `GET /applications/{id}/history` rather than
+  embedded in the detail response, because `ApplicationOut` is what the CSV
+  export reads and embedding would make it lazily load history per row — the
+  same N+1 §2.1 exists to prevent. See §4.4.
 - Its downgrade refuses while any row exists, and the reason is stronger than
   for the revisions before it: those dropped columns whose values could be
   retyped from a posting, whereas this is the only copy of when each status
@@ -645,6 +652,27 @@ must be updated to match.
   state-switched views, so each application has its own URL. Real URLs make the
   browser back button behave correctly, which matters most on mobile, and make
   a specific application bookmarkable.
+- **[built] A status timeline sits between the form and the contacts**
+  (KAN-43), reading the history §2.2 records. That ordering reads outward from
+  the thing itself: the form *is* the application, the timeline is derived from
+  it, contacts are related records.
+
+  - **Vertical rows, not a horizontal bar.** §1 makes the phone a real target
+    and a gantt-style bar at 402px is unreadable.
+  - **A repeated status is shown every time it occurs.** §3 allows any
+    transition, so `rejected → interview → rejected` is ordinary and
+    deduplicating it would misrepresent the record.
+  - **Durations are deliberately coarse** past a fortnight — days, then weeks,
+    then months. A job search is acted on in weeks, and "3 weeks" is more
+    useful than "23 days"; under a fortnight the exact day count is what you
+    are actually counting.
+  - **Two honesty notes are rendered, not assumed.** One says durations
+    measure when a change was *recorded* rather than when it happened (§2.2).
+    The other appears only when an application's `created_at` predates its
+    first recorded change — true of everything older than KAN-42 — because
+    rendering that silently would claim the status changed on the migration
+    date.
+
 - **[built]** No backend work is needed for the detail screen — the API already
   serves `GET /applications/{id}`.
 
@@ -681,9 +709,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 157 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 164 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 286 tests, 99% of statements and **100% of functions**, covering
+    Frontend 320 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

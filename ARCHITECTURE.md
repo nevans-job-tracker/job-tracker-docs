@@ -205,7 +205,8 @@ in the browser, which is the first runtime dependency added since the router.
 **KAN-42** started recording every status change. Nothing reads it yet — it
 shipped alone because history cannot be reconstructed afterwards, so the
 recording is the only part with a deadline. A timeline and a status-over-time
-graph are the stories it unblocks.
+graph are the stories it unblocks. **KAN-43** built the first of those: a
+timeline on the detail screen, and the first thing that reads the history.
 
 ## Testing
 
@@ -213,8 +214,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 157 tests, 99% statements
-cd job-tracker-frontend && npm test     # 286 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 164 tests, 99% statements
+cd job-tracker-frontend && npm test     # 320 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
