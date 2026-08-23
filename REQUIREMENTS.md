@@ -662,10 +662,11 @@ must be updated to match.
   - **A repeated status is shown every time it occurs.** §3 allows any
     transition, so `rejected → interview → rejected` is ordinary and
     deduplicating it would misrepresent the record.
-  - **Durations are deliberately coarse** past a fortnight — days, then weeks,
-    then months. A job search is acted on in weeks, and "3 weeks" is more
-    useful than "23 days"; under a fortnight the exact day count is what you
-    are actually counting.
+  - **Durations are always a count of days**, never rolled up into weeks or
+    months. Rounding up reads more naturally in prose but loses the number
+    that matters: "3 weeks" and "25 days" are the same span, and only one of
+    them says how long a recruiter has had the application. Days also compare
+    directly across entries without arithmetic.
   - **Two honesty notes are rendered, not assumed.** One says durations
     measure when a change was *recorded* rather than when it happened (§2.2).
     The other appears only when an application's `created_at` predates its
