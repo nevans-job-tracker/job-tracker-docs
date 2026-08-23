@@ -213,6 +213,10 @@ currently has one history row, so a chart of it would be a flat line. It is
 worth building once the recording has accumulated something to show — and it
 also needs §7 revising, since reporting is still listed there as a non-goal.
 
+**KAN-44** added dark mode. The toggle was the small half; the work was turning
+59 hardcoded colours into role-named tokens so the stylesheet could be themed
+at all.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -220,7 +224,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 164 tests, 99% statements
-cd job-tracker-frontend && npm test     # 320 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 337 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

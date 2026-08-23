@@ -645,6 +645,29 @@ must be updated to match.
   - It only interrupts when something would genuinely be lost, so an untouched
     record navigates away silently.
 
+- **[built] A dark mode toggle sits in the header of every screen** (KAN-44).
+  The app is read from a phone, often at night, and it was white throughout.
+
+  - **The default follows the operating system.** With nothing stored,
+    `prefers-color-scheme` decides — a phone already in dark mode should not
+    have to be asked twice.
+  - **The choice persists in `localStorage`, not the URL.** This is the one
+    deliberate exception to §4.2's rule. Search, filter and sort live in the
+    URL so a *view* can be linked and survive a reload; a theme is a property
+    of the device you are reading on, and putting it in the URL would impose
+    your theme on anyone you sent a link to.
+  - **The theme is applied before React mounts**, by a small inline script in
+    `index.html`. Doing it from a `useEffect` paints the light palette first
+    and repaints — every load flashes white, worst on a phone at night, which
+    is the whole case for the feature. That script duplicates `readTheme()` on
+    purpose, and a test compares the two so they cannot drift apart silently.
+  - **Every colour in `index.css` is a token**, named by role rather than
+    value. A literal anywhere else in that file is a bug.
+  - **The status badges are not inverted mechanically.** All eight are light
+    tints with dark text; flipping them by formula produces colours that glare
+    against a dark page, so each carries its own pair chosen to sit at the same
+    visual weight as the surface behind it.
+
 - **[decided]** Archive lives on the detail screen, keeping it away from touch
   targets in the list. Unarchive appears there too when viewing an archived
   application.
@@ -712,7 +735,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 164 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 320 tests, 99% of statements and **100% of functions**, covering
+    Frontend 337 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
