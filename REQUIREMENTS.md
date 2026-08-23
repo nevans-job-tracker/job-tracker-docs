@@ -837,10 +837,12 @@ must be updated to match.
     original rehearsal never restored into. **25 seconds**, every comparison
     matching, including the Alembic revision on both sides.
 
-    **Repeated a third time after KAN-40** shipped `53f76402812f` — **15
-    seconds**, every comparison matching. That one is different in kind: it
-    happened because the machine asked for it. Nobody remembered the rule; the
-    MOTD hook below noticed the migration and said so at login.
+    **Repeated after KAN-40** (`53f76402812f`, 15s) and again after **KAN-42**
+    (`83ffeed76a6f`, 20s), every comparison matching both times. Those two are
+    different in kind from the first two: they happened because the machine
+    asked. Nobody remembered the rule — a migration landed and the MOTD hook
+    below said so at login. That is now the normal way a rehearsal gets
+    triggered.
 
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
