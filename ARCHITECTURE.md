@@ -228,6 +228,19 @@ rather than the whole string, so it wrapped with width to spare and widening
 the window never helped. One `white-space: nowrap`, shared with the rule
 `.col-date` already carried for the identical reason.
 
+**KAN-49** consolidated every human-readable label map into `labels.js`, which
+the frontend's own `CLAUDE.md` had said to do once a third one appeared.
+**KAN-50** and **KAN-51** then added five columns in one revision: `pay_period`
+so an hourly rate stops being told apart from a salary by magnitude alone,
+`employment_type` and `contract_term_months`, and a `hours_per_week_min`/`_max`
+pair. Employment type took Location's place in the list — the search is
+effectively all-remote, so that column said "Remote" on nearly every row.
+
+**KAN-52 is the interesting one, and it is not in these repos.** A fourth
+repo — see `WORKSPACE.md` — scrapes postings into the API, and it turned out to
+detect hourly pay already, then discard it with a warning, because the schema
+had nowhere to put it. KAN-50 removes the reason that workaround exists.
+
 **KAN-47** put required years of experience in the list as a sortable column.
 No backend work — the route's `sort_by` whitelist already permitted it and the
 NULL-sorts-greatest rule is generic. **KAN-48** added a clear button to the
@@ -240,8 +253,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 164 tests, 99% statements
-cd job-tracker-frontend && npm test     # 381 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 190 tests, 99% statements
+cd job-tracker-frontend && npm test     # 401 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

@@ -50,6 +50,10 @@ declaration order.
 | `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
 | `salary_max` | decimal(10,2) | no | |
 | `salary_currency` | string(10) | no, defaults `USD` | |
+| `pay_period` | enum | yes, defaults `annual` | Whether the salary figures are annual or hourly — see below |
+| `employment_type` | enum | no | Five values; blank means not recorded — see below |
+| `contract_term_months` | smallint | no | Only valid alongside a contract type; enforced in the route |
+| `hours_per_week_min` / `_max` | smallint | no | A range, because postings state one |
 | `date_applied` | date | no | Empty means not applied for yet, and pairs with status `interested` — §3. A future date warns rather than rejects |
 | `notes` | text | no | |
 | `next_action` | string(255) | no | What is owed next ("follow up", "take-home due") |
@@ -102,6 +106,51 @@ wording is lost and "senior level" has to be translated by hand.
   the column holds a minimum, so "at least five" is true whether the posting
   said "5+" or "5–8 years", where a bare number reads as exact. `0` renders
   **Entry**, because `0+` would be true and say nothing.
+
+**[decided] `pay_period` records what the salary figures measure** (KAN-50).
+Some postings advertise an hourly rate rather than an annual salary, and
+nothing distinguished the two.
+
+- **Magnitude was doing the job by accident.** §4.2's rule "values below 1000
+  are shown unrounded" was written so an hourly `55` would not render as `0K`
+  — and it was the *only* thing standing between an 86/hour rate and a
+  nonsense display. The guard stays, because it still catches a mistyped
+  annual figure, but it is no longer carrying a fact the schema should hold.
+- **NOT NULL, defaulting to `annual`**, unlike the two fields below. Every pay
+  figure is one period or the other, so there is no honest "unset".
+- **The backfill is the default and nothing cleverer.** A
+  `salary_min < 1000 => hourly` rule is the obvious move and was wrong on this
+  data: one row read `0.00–120000.00`, an annual posting with a bogus zero
+  minimum, which the heuristic would have relabelled hourly and hidden. One
+  row was corrected by hand instead.
+- **The stored columns keep their `salary_*` names.** Renaming them is a
+  migration that also moves the API surface and the `sort_by` whitelist, to
+  buy a better name for something `pay_period` has already disambiguated —
+  the same call §4.2 made about `salary_currency`. Only the *displayed* label
+  became "Pay".
+
+**[decided] `employment_type` records whether the posting is permanent**
+(KAN-51). Five values, declared `full_time`, `part_time`, `contract`,
+`contract_to_hire`, `volunteer` — most to least conventional commitment, with
+the two contract kinds adjacent. MariaDB stores an `ENUM` as its ordinal, so
+that order is what sorting the column means.
+
+- **Nullable and *not* defaulted**, the opposite of `pay_period` and for a
+  reason: plenty of postings simply do not say, and defaulting to `full_time`
+  would have invented a fact for every existing row. Blank means "not
+  recorded".
+- **`contract_term_months` is only valid alongside a contract type**, enforced
+  in the route against the *merged* PATCH result — setting the type to
+  `full_time` while a stored term remains has to fail, so checking the request
+  body alone is not enough. Same shape as the salary rule, same reason.
+- **`hours_per_week_min` / `_max` is a pair, not a scalar**, because postings
+  write it as a range: *"Commitment: 10-40 hrs/week"*. A single column would
+  have had to throw an end away. A fixed commitment sets both to the same
+  value, and the pair carries the same not-inverted check as salary.
+- **Weekly hours are deliberately not tied to an employment type.** Twenty
+  hours a week means the same on a part-time role as on a contract, so a
+  pairing rule there would buy nothing and only give the API another way to
+  say no.
 
 **[decided] The cover letter is stored as text, not as a file** (KAN-40).
 §6.2 deferred *file attachments*; the requirement turned out to be narrower —
@@ -392,11 +441,11 @@ Consequences:
   | Next action | Always |
   | Date applied | Always; default sort |
   | Role title | Wider screens only |
-  | Location | Wider screens only |
-  | Salary | Wider screens only |
+  | Pay | Wider screens only; annual or hourly — §2 |
   | Source | Wider screens only — **[built]**, the first responsive column |
   | Job link | Wider screens only — an icon, **[built]** KAN-45 |
   | Experience | Wider screens only — **[built]** KAN-47 |
+  | Employment type | Wider screens only — **[built]** KAN-51, replacing Location |
 
   **[decided] The narrow-screen breakpoint is 900px.** The target mobile device
   is an **iPhone 17 Pro**: 402 × 874 CSS pixels, device pixel ratio 3. That means
@@ -420,6 +469,16 @@ Consequences:
   **Row actions are dropped** — they move to the detail screen. Rows become
   clickable (§4.4), so a per-row Delete button is a mis-tap hazard on touch.
 
+  **[decided] Location gave up its column to Employment type** (KAN-51). The
+  search is effectively all-remote, so the column read "Remote" on nearly
+  every row — it was spending the widest-screen budget to say nothing. Whether
+  a role is permanent or a six-month contract varies row to row and changes
+  whether it is worth applying for.
+
+  Location is **not** removed from the app: it is still stored, still one of
+  the five fields the search covers, and still on the detail screen. Only the
+  list column is gone.
+
   **The link came back as an icon** (KAN-45), and the reasoning that removed
   it is what allows it. It was dropped alongside the row actions, but those
   were removed because mis-tapping *Delete* is destructive — opening a tab by
@@ -437,9 +496,9 @@ Consequences:
 
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
-- **[built]** Sort by company, role, location, source, required experience,
-  status, next action date, or date applied — click a header to toggle
-  ascending/descending.
+- **[built]** Sort by company, role, employment type, source, required
+  experience, status, next action date, or date applied — click a header to
+  toggle ascending/descending.
   Default: date applied, descending. Salary is the one displayed column that is
   not sortable.
 
@@ -503,9 +562,15 @@ Consequences:
     and forces the column to allocate for one line. The same rule `.col-date`
     has carried since KAN-25, for the hyphens in an ISO date; they now share
     it. No mobile exception is needed, the column being `col-wide`.
+  - **[built] An hourly rate is labelled and never scaled** (KAN-50):
+    `86/hr`, `60–120/hr`. The column header is **Pay** rather than Salary,
+    since it now holds two kinds of thing.
+  - **[built] A single figure is shown once**, not as `120K–120K`. True of an
+    hourly `86–86` and of the annual row that carried the same number twice.
   - **Values below 1000 are shown unrounded.** An hourly rate entered as `55`
     would otherwise render as `0K` — not merely ugly but wrong. Decided rather
-    than discovered.
+    than discovered. Since KAN-50 this is a guard against a mistyped annual
+    figure rather than the thing distinguishing hourly from annual.
   - Rounding is to nearest, so `106,500` reads `107K`. Truncating would
     understate the figure.
   - **[built] The currency is no longer editable from the form** (KAN-38). It
@@ -784,9 +849,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 164 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 190 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 381 tests, 99% of statements and **100% of functions**, covering
+    Frontend 401 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
