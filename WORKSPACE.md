@@ -135,7 +135,7 @@ reaching nginx.
 
 ## Restoring
 
-Verified end to end four times, using only what would survive the loss of the
+Verified end to end five times, using only what would survive the loss of the
 machine:
 
 | When | Schema | Result |
@@ -144,15 +144,22 @@ machine:
 | 2026-08-21, after KAN-30 | `127a196f3c90` | **25s**, after two revisions shipped |
 | 2026-08-23, after KAN-40 | `53f76402812f` | **15s**, the first one the machine asked for |
 | 2026-08-23, after KAN-42 | `83ffeed76a6f` | **20s**, now the routine |
+| 2026-08-25, after KAN-51 | `9c1e7d4b8a52` | **27s**, the largest schema delta yet |
 
 Each repeat was the rule below being followed. All but the first ran against
 artifacts from `job-tracker-backup.service` started by hand rather than by the
 timer — the same unit, script and upload path, only the trigger differed.
 
-**The last two are the ones worth noting**: nobody remembered either. A
+**The middle pair are the ones worth noting**: nobody remembered either. A
 migration landed and the login banner started saying the rehearsal was out of
 date on its own. That is the drift check below working as designed rather than
-as a test, and it has now become the normal way this happens.
+as a test, and it has become the normal way this happens.
+
+**The fifth is the biggest test of the rule so far.** `9c1e7d4b8a52` added
+five columns at once — two enums, three integers — where every previous
+revision added at most two. An old dump meeting that schema is exactly the
+case the repeat rule exists for, and every count, the revision, the archived
+record and the contact join all matched.
 
 ```bash
 /opt/job-tracker-backend/deploy/restore.sh

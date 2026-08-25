@@ -1012,6 +1012,12 @@ must be updated to match.
     below said so at login. That is now the normal way a rehearsal gets
     triggered.
 
+    **Repeated after KAN-51** (`9c1e7d4b8a52`, 27s), which is the largest
+    schema delta the rule has been exercised against — five columns in one
+    revision, where every earlier one added at most two. Every count matched,
+    both revisions read `9c1e7d4b8a52`, and the archived record and contact
+    join both read back.
+
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
 
