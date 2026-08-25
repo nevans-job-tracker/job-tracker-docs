@@ -489,6 +489,14 @@ Consequences:
     a column that only survives on wider screens. Dropping it unconditionally
     would show a misleading bare number for a non-USD entry, so
     `salary_currency` keeps its meaning and a `GBP` row still says `GBP`.
+  - **[built] The range is kept on one line** (KAN-46). The en-dash is a
+    line-break opportunity, so the auto table layout sized the column to the
+    widest unbreakable run — `106K–` — rather than the whole string, and
+    every salary wrapped at 1280px with width to spare. `white-space: nowrap`
+    removes the break opportunity, which makes min-content the full string
+    and forces the column to allocate for one line. The same rule `.col-date`
+    has carried since KAN-25, for the hyphens in an ISO date; they now share
+    it. No mobile exception is needed, the column being `col-wide`.
   - **Values below 1000 are shown unrounded.** An hourly rate entered as `55`
     would otherwise render as `0K` — not merely ugly but wrong. Decided rather
     than discovered.

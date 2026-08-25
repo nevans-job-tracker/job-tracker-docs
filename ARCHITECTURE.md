@@ -222,9 +222,11 @@ control on the detail screen. The stored `job_link` had never been reachable
 from anywhere in the UI, and §4.2 had recorded it moving to the detail screen
 when the column was dropped, which never happened.
 
-**KAN-46** is open: salary ranges wrap at the en-dash even on a wide desktop,
-because the table's auto layout sizes the column to the widest unbreakable
-run rather than the whole string.
+**KAN-46** stopped salary ranges wrapping at the en-dash on a wide desktop.
+The auto table layout was sizing the column to the widest unbreakable run
+rather than the whole string, so it wrapped with width to spare and widening
+the window never helped. One `white-space: nowrap`, shared with the rule
+`.col-date` already carried for the identical reason.
 
 ## Testing
 
