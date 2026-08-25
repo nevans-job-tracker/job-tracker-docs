@@ -7,7 +7,7 @@ This file is the canonical copy. The workspace root holds a short `CLAUDE.md`
 stub that imports it — the root is not a git repository, so the stub cannot be
 versioned, but everything of substance lives here.
 
-## The three repos
+## The repos
 
 Cloned side by side, the working directory looks like this:
 
@@ -19,7 +19,8 @@ job-tracker/                 <- not a repo; local workspace only
 │   └── docs/                <- submodule → job-tracker-docs
 ├── job-tracker-frontend/    <- React (Vite) single-page app
 │   └── docs/                <- submodule → job-tracker-docs
-└── job-tracker-docs/        <- this repo: shared requirements and architecture
+├── job-tracker-docs/        <- this repo: shared requirements and architecture
+└── chrome-extension-job-tracker/   <- browser extension; no docs/ submodule
 ```
 
 | Repo | What it is |
@@ -27,9 +28,27 @@ job-tracker/                 <- not a repo; local workspace only
 | [job-tracker-backend](https://github.com/nevans-job-tracker/job-tracker-backend) | FastAPI REST API |
 | [job-tracker-frontend](https://github.com/nevans-job-tracker/job-tracker-frontend) | React (Vite) single-page app |
 | [job-tracker-docs](https://github.com/nevans-job-tracker/job-tracker-docs) | Shared requirements and architecture |
+| [chrome-extension-job-tracker](https://github.com/nevans-job-tracker/chrome-extension-job-tracker) | Browser extension: scrapes a posting and POSTs it to the API |
 
-Clone the code repos with `--recurse-submodules`, or `docs/` arrives empty. If
-you already cloned without it: `git submodule update --init`.
+**The extension is a fourth repo and a first-class API consumer**, even though
+it is never deployed to the server and does not mount `docs/`. That last part
+is a real gap rather than a detail: `REQUIREMENTS.md` defines the contract the
+extension depends on, and it is invisible from inside that checkout.
+
+The consequence showed up during KAN-50/51 — five columns reached the point of
+shipping before anyone asked what they meant for the extension. Nothing broke,
+because every new column was nullable or defaulted, and that was verified by
+posting its exact payload rather than assumed. But the check happened because
+someone remembered, which is the thing this file exists to stop relying on.
+
+**Any change to the `applications` schema or to `POST /applications` has a
+fourth consumer**, and it fails in the quiet direction: pydantic ignores
+unknown fields, so an extension sending a column the backend does not have yet
+gets a `201` and silent data loss. Deploy the backend first, always.
+
+Clone the two code repos with `--recurse-submodules`, or `docs/` arrives
+empty. If you already cloned without it: `git submodule update --init`. The
+extension has no submodule and needs no flag.
 
 ## Where documentation lives
 
