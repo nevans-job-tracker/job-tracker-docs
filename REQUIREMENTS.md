@@ -98,6 +98,10 @@ wording is lost and "senior level" has to be translated by hand.
   imposed, because there is no equally obvious line — 30 is unusual but real.
 - **`0` is a real answer and distinct from blank.** An entry-level posting
   states no minimum, which is not the same as not stating one.
+- **[built] It is shown in the list** (KAN-47), as `5+` rather than `5` —
+  the column holds a minimum, so "at least five" is true whether the posting
+  said "5+" or "5–8 years", where a bare number reads as exact. `0` renders
+  **Entry**, because `0+` would be true and say nothing.
 
 **[decided] The cover letter is stored as text, not as a file** (KAN-40).
 §6.2 deferred *file attachments*; the requirement turned out to be narrower —
@@ -392,6 +396,7 @@ Consequences:
   | Salary | Wider screens only |
   | Source | Wider screens only — **[built]**, the first responsive column |
   | Job link | Wider screens only — an icon, **[built]** KAN-45 |
+  | Experience | Wider screens only — **[built]** KAN-47 |
 
   **[decided] The narrow-screen breakpoint is 900px.** The target mobile device
   is an **iPhone 17 Pro**: 402 × 874 CSS pixels, device pixel ratio 3. That means
@@ -432,8 +437,9 @@ Consequences:
 
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
-- **[built]** Sort by company, role, location, source, status, next action
-  date, or date applied — click a header to toggle ascending/descending.
+- **[built]** Sort by company, role, location, source, required experience,
+  status, next action date, or date applied — click a header to toggle
+  ascending/descending.
   Default: date applied, descending. Salary is the one displayed column that is
   not sortable.
 
@@ -568,15 +574,23 @@ Consequences:
   - Disabled when the filters match nothing — a headers-only file is a puzzle
     rather than a deliverable.
 
-- **[built]** Free-text search across company, role title, and location,
-  debounced 250ms.
+- **[built]** Free-text search across **company, role title, location,
+  source and notes**, debounced 250ms.
+  - **[built] A clear button empties it in one click** (KAN-48), appearing
+    only once the box has content — a control that does nothing is worse than
+    no control (§4.4). It clears through the same handler as typing, so the
+    URL-state rules below apply unchanged.
 - **[built]** Filter to a single status, or all statuses.
 - **[built]** Result count displayed; empty state when no applications exist.
-- **[gap]** Search does not cover `notes`, `source`, `job_description` or
-  `cover_letter`. Notes are where the useful detail lives (recruiter names,
-  interview feedback), and *"which letter did I say that in?"* is a natural
-  question the tracker cannot answer. The case for closing this grows with
-  every long-text field added — KAN-40 made it four.
+- **[gap]** Search does not cover `job_description` or `cover_letter`.
+  *"Which letter did I say that in?"* is a natural question the tracker
+  cannot answer, and the case grows with every long-text column.
+
+  This entry previously also listed `notes` and `source`, which had in fact
+  been covered for some time — the doc was describing a narrower search than
+  the code performed. Corrected under KAN-48. The gap is real but half the
+  size it was recorded as, and both remaining columns are long-form, which
+  is a different proposition from adding a short field to the `ilike` chain.
 - **[built]** Search, filter, and sort state **persists in the URL**, not in
   local storage. It survives a reload, works with the browser back button, and
   makes a filtered view linkable. URL state is also inspectable in a way local
@@ -772,7 +786,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 164 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 368 tests, 99% of statements and **100% of functions**, covering
+    Frontend 381 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

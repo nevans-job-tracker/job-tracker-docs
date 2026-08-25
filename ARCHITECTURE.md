@@ -228,6 +228,12 @@ rather than the whole string, so it wrapped with width to spare and widening
 the window never helped. One `white-space: nowrap`, shared with the rule
 `.col-date` already carried for the identical reason.
 
+**KAN-47** put required years of experience in the list as a sortable column.
+No backend work — the route's `sort_by` whitelist already permitted it and the
+NULL-sorts-greatest rule is generic. **KAN-48** added a clear button to the
+search field, and corrected §4.2, which had been describing a three-field
+search while the code had searched five for some time.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -235,7 +241,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 164 tests, 99% statements
-cd job-tracker-frontend && npm test     # 368 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 381 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
