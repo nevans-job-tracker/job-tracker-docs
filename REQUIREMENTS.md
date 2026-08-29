@@ -639,8 +639,38 @@ Consequences:
   - Disabled when the filters match nothing — a headers-only file is a puzzle
     rather than a deliverable.
 
+- **[built] The list filters by source** (KAN-56), from a dropdown between the
+  search box and the status filter, defaulting to **All Sources**.
+
+  - **The options are read from the data, not hard-coded.** A fixed list of
+    the five sites the extension supports would have been exactly right at the
+    time — all 128 applications carried one of them, with no blanks and no
+    variants. Deriving them is better for a reason §2 already recorded: source
+    is free text and its values *will* fragment. A hand-typed `Referral`, or a
+    lowercase `linkedin`, appears as its own option — visible and filterable —
+    where a fixed list would hide both and leave those rows unreachable
+    through the filter. It also means the extension gaining a sixth site needs
+    no frontend change.
+  - **`GET /applications/sources` is a separate endpoint**, returning the
+    distinct sources across *all* records including archived ones. The list
+    response is filtered and paginated, so its rows are the wrong population:
+    options computed from what is on screen would collapse to the chosen
+    source and leave no way back to All. The frontend fetches them once on
+    mount for the same reason.
+  - **The filter matches exactly, not with `ilike`.** The values come from a
+    dropdown built from the data, so exactness is achievable — and it keeps
+    `LinkedIn` and `linkedin` distinct rather than quietly merging them, which
+    is what makes the fragmentation visible instead of hidden.
+  - Losing the options costs the filter its choices, not the page; the list
+    renders and surfaces its own errors regardless.
+
 - **[built]** Free-text search across **company, role title, location,
   source and notes**, debounced 250ms.
+  - **The placeholder no longer mentions source** (KAN-56), now that a
+    dedicated control exists. This is wording only — the field still searches
+    the column. Called out because §4.2 had to be corrected under KAN-48 for
+    exactly the drift of documented scope against actual behaviour, and a
+    label change is not a scope change.
   - **[built] A clear button empties it in one click** (KAN-48), appearing
     only once the box has content — a control that does nothing is worse than
     no control (§4.4). It clears through the same handler as typing, so the
@@ -849,9 +879,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 190 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 207 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 401 tests, 99% of statements and **100% of functions**, covering
+    Frontend 420 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

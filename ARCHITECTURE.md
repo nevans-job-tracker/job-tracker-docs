@@ -247,14 +247,19 @@ NULL-sorts-greatest rule is generic. **KAN-48** added a clear button to the
 search field, and corrected §4.2, which had been describing a three-field
 search while the code had searched five for some time.
 
+**KAN-56** added a source filter to the list. Its options are read from the
+data rather than hard-coded, which turns §2's warning that free-text sources
+"will fragment" into something the dropdown surfaces every time it is opened
+rather than something that quietly degrades filtering.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 190 tests, 99% statements
-cd job-tracker-frontend && npm test     # 401 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 207 tests, 99% statements
+cd job-tracker-frontend && npm test     # 420 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
