@@ -690,9 +690,18 @@ Consequences:
     goes stale — but rows relocating under the cursor is worse than being
     briefly out of order.
   - **That deferral has since happened** (KAN-60): only Company and Role open
-    the detail screen now, so the mis-tap hazard is gone. This control stays
-    `col-wide` regardless — the remaining question is whether a select is a
-    reasonable target on a phone, which is not the question that put it here.
+    the detail screen now, so the mis-tap hazard that first made this
+    `col-wide` is gone.
+  - **[decided] It stays `col-wide` anyway**, for a different and better
+    reason: a native `<select>` is a **scroll trap** on touch. Dragging to
+    scroll a long list can catch the control instead of the page, and on some
+    platforms that opens the picker or changes the value. That is a hazard
+    while *reading*, where a mis-tap is a hazard while *aiming* — so removing
+    the mis-tap did not remove this.
+
+    The phone keeps the badge. The question is closed rather than deferred:
+    it would take a control that cannot be grabbed mid-scroll, not a change
+    of breakpoint.
 
 - **[built] The list filters by source** (KAN-56), from a dropdown between the
   search box and the status filter, defaulting to **All Sources**.
