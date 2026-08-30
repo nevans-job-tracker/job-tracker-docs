@@ -274,6 +274,13 @@ regression from a `nowrap` that protected against something a `<select>`
 cannot do; caught by measuring the phone breakpoint afterwards, which is the
 one thing jsdom can never check.
 
+**KAN-60** stopped the whole row opening the detail screen — Company and Role
+are links now, and the row is inert. Asked for as "Role only", which would
+have left a phone with no way in at all, Role being `col-wide`. The change
+deleted three guards that existed solely because rows were clickable, and
+replaced a `tabIndex` div with real anchors, so middle-click and the keyboard
+work by construction rather than by handler.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -281,7 +288,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 213 tests, 99% statements
-cd job-tracker-frontend && npm test     # 463 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 462 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

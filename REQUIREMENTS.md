@@ -689,11 +689,10 @@ Consequences:
   - **No re-sort and no refetch.** Sorted by status, a changed row's position
     goes stale — but rows relocating under the cursor is worse than being
     briefly out of order.
-  - **Deferred, with a trigger:** restricting detail-screen navigation to the
-    **Role** column rather than the whole row would remove the mis-tap hazard
-    at its source, and with it the reason this control is desktop-only. Worth
-    doing before any further per-row control is added; that constraint has now
-    shaped two decisions.
+  - **That deferral has since happened** (KAN-60): only Company and Role open
+    the detail screen now, so the mis-tap hazard is gone. This control stays
+    `col-wide` regardless — the remaining question is whether a select is a
+    reasonable target on a phone, which is not the question that put it here.
 
 - **[built] The list filters by source** (KAN-56), from a dropdown between the
   search box and the status filter, defaulting to **All Sources**.
@@ -790,8 +789,28 @@ must be updated to match.
 | Detail | `/applications/:id` | Full details for one application, editable in place |
 | New | `/applications/new` | Same layout as Detail, empty, for creating an entry |
 
-- **[decided]** Rows in the list are clickable and navigate to the detail screen.
-  This replaces the inline edit form and the per-row Edit button.
+- **[built] Company and Role open the detail screen; the rest of the row does
+  not** (KAN-60). Rows were wholly clickable, which was the constraint behind
+  two earlier decisions — §4.2 dropping row actions as a mis-tap hazard, and
+  KAN-59 keeping the status dropdown to wide screens for the same reason.
+
+  - **Not Role alone**, as first proposed. Role is `col-wide` and does not
+    render below 900px, so it cannot be the only way in — a phone would have
+    none. Company carries it too, being always visible and the row's
+    identity.
+  - **They are real anchors**, not a `tabIndex` div with an Enter/Space
+    handler. Middle-click, ctrl-click, open-in-new-tab and keyboard
+    activation work by construction, and assistive technology hears a link
+    rather than a generic element.
+  - **Three guards were deleted with it**: the row's keydown check from
+    KAN-45, and the `stopPropagation` on the posting link and the status
+    select. All three existed only because the row was clickable.
+  - **The row hover highlight stays**, without a cursor change. At ten
+    columns it is what lets the eye track across a row — a reading aid
+    independent of clicking — and the links carry the affordance instead.
+  - This removes the stated reason the status dropdown is desktop-only.
+    Whether a phone should offer it is now a separate question about touch
+    target size rather than about mis-taps.
 - **[decided]** The detail screen *is* the edit form — populated and saveable,
   rather than a read view with a separate edit mode. Fewer states, one component.
 - **[decided]** The new-entry screen is the same component with no initial
@@ -960,7 +979,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 213 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 463 tests, 99% of statements and **100% of functions**, covering
+    Frontend 462 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
