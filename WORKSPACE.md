@@ -135,7 +135,7 @@ reaching nginx.
 
 ## Restoring
 
-Verified end to end five times, using only what would survive the loss of the
+Verified end to end six times, using only what would survive the loss of the
 machine:
 
 | When | Schema | Result |
@@ -145,6 +145,7 @@ machine:
 | 2026-08-23, after KAN-40 | `53f76402812f` | **15s**, the first one the machine asked for |
 | 2026-08-23, after KAN-42 | `83ffeed76a6f` | **20s**, now the routine |
 | 2026-08-25, after KAN-51 | `9c1e7d4b8a52` | **27s**, the largest schema delta yet |
+| 2026-08-30, after KAN-57 | `b3e51f0a7c46` | **18s**, the first enum change |
 
 Each repeat was the rule below being followed. All but the first ran against
 artifacts from `job-tracker-backup.service` started by hand rather than by the
@@ -154,6 +155,12 @@ timer — the same unit, script and upload path, only the trigger differed.
 migration landed and the login banner started saying the rehearsal was out of
 date on its own. That is the drift check below working as designed rather than
 as a test, and it has become the normal way this happens.
+
+**The sixth is the first that altered an *enum* rather than adding columns**,
+and it is the mildest case the rule has met: appending a value is backward
+compatible by construction, so a dump written before it would still have
+loaded. It was run anyway, because deciding case by case which migrations
+"need" a rehearsal is how the habit erodes.
 
 **The fifth is the biggest test of the rule so far.** `9c1e7d4b8a52` added
 five columns at once — two enums, three integers — where every previous

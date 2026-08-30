@@ -1076,6 +1076,12 @@ must be updated to match.
     both revisions read `9c1e7d4b8a52`, and the archived record and contact
     join both read back.
 
+    **Repeated after KAN-57** (`b3e51f0a7c46`, 18s), the first revision that
+    altered an *enum* rather than adding columns — and the mildest case so
+    far, since appending a value is backward compatible by construction. Run
+    regardless: deciding case by case which migrations "need" a rehearsal is
+    how the habit erodes.
+
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
 
