@@ -46,7 +46,7 @@ declaration order.
 | `location` | string(255) | no | |
 | `company_size` | enum | no | Wellfound's six bands — see below |
 | `years_experience_min` | smallint | no | Minimum only; `0` means entry level and is distinct from blank |
-| `status` | enum | yes, defaults `applied` | Eight values, freely assignable — §3 |
+| `status` | enum | yes, defaults `applied` | Nine values, freely assignable — §3 |
 | `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
 | `salary_max` | decimal(10,2) | no | |
 | `salary_currency` | string(10) | no, defaults `USD` | |
@@ -340,8 +340,8 @@ gets built on it later.
 
 ## 3. Status lifecycle
 
-Eight statuses: `interested`, `applied`, `phone_screen`, `interview`, `offer`,
-`rejected`, `ghosted`, `withdrawn`.
+Nine statuses: `interested`, `applied`, `phone_screen`, `interview`, `offer`,
+`rejected`, `ghosted`, `posting_closed`, `withdrawn`.
 
 **[decided] `interested` marks a job not yet applied for** (KAN-31). It is
 the pair to an empty `date_applied` (§2): without it, a job you intend to
@@ -361,6 +361,34 @@ filter cannot separate intentions from applications.
   existing rows meaning what they meant. Display order is the frontend's, where
   `STATUS_LABELS` lists it first; the consequence is that sorting the list *by
   status* on MariaDB puts Interested last.
+
+**[decided] `posting_closed` marks a posting that went away** (KAN-57) —
+pulled, filled, or expired.
+
+The other eight all describe the *application*; this one describes the
+*posting*. `rejected` asserts that somebody considered you and said no, and
+when an ad is withdrawn nobody decided anything — frequently the application
+was never sent and the record is still `interested`. Recording it as a
+rejection would overstate the rejections in the search and corrupt the
+history §2.2 exists to make answerable: a later "what fraction get past a
+phone screen" would count ads that were never live long enough to answer.
+`withdrawn` is wrong the other way round; that is you pulling out.
+
+- **Not a separate field.** A `posting_available` boolean would be a second
+  mechanism describing one thing. §4.1's framing settles it: status records
+  what happened to an application, and the opportunity ending is what
+  happened. Archive stays orthogonal — whether it should still be in view.
+- **Stored as `posting_closed`, not `closed`**, which is ambiguous in the
+  database. Deliberately not `filled` or `expired`: both claim to know *why*
+  it went away, which a dead link does not tell you.
+- **Appended to the enum**, for the same ordinal reason as `interested`. Its
+  display position is the frontend's, among the terminal states ordered by
+  who ended it: rejected, ghosted, posting_closed, withdrawn. Sorting by
+  status on MariaDB therefore puts it last.
+- **The revision moves three columns**, because `status_changes` carries the
+  same enum twice — without those, a transition *into* the new status could
+  not be recorded. Its downgrade counts both tables: a history row can hold
+  the value when no application currently does.
 
 **[decided] Free assignment.** Any status may be set to any other status at any
 time. There is no transition validation, no terminal states, and no required
@@ -787,7 +815,7 @@ must be updated to match.
     purpose, and a test compares the two so they cannot drift apart silently.
   - **Every colour in `index.css` is a token**, named by role rather than
     value. A literal anywhere else in that file is a bug.
-  - **The status badges are not inverted mechanically.** All eight are light
+  - **The status badges are not inverted mechanically.** All are light
     tints with dark text; flipping them by formula produces colours that glare
     against a dark page, so each carries its own pair chosen to sit at the same
     visual weight as the surface behind it.
@@ -879,9 +907,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 207 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 213 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 420 tests, 99% of statements and **100% of functions**, covering
+    Frontend 435 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

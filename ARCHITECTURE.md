@@ -252,14 +252,21 @@ data rather than hard-coded, which turns §2's warning that free-text sources
 "will fragment" into something the dropdown surfaces every time it is opened
 rather than something that quietly degrades filtering.
 
+**KAN-57** added a `posting_closed` status, for an ad that was pulled or
+filled. `rejected` was the nearest and asserts a decision nobody made — often
+the application was never sent. The label and badge were the whole frontend
+change: the filter, timeline, export and form dropdown all read
+`STATUS_LABELS`, so they picked it up for free, and the parametrised tests
+over that map began covering it automatically.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 207 tests, 99% statements
-cd job-tracker-frontend && npm test     # 420 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 213 tests, 99% statements
+cd job-tracker-frontend && npm test     # 435 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
