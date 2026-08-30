@@ -667,6 +667,34 @@ Consequences:
   - Disabled when the filters match nothing — a headers-only file is a puzzle
     rather than a deliverable.
 
+- **[built] A status can be changed from the list on wide screens** (KAN-59).
+  The Status cell holds a dropdown that saves immediately, so noticing a
+  posting has closed no longer means a trip to the detail screen to change
+  one field already on screen.
+
+  - **`col-wide`, with the badge kept below 900px.** This is the first cell
+    whose *content* is responsive rather than its presence, and it needed a
+    `col-narrow` counterpart to the existing class. The reason is §4.2's own:
+    row actions were dropped because a per-row control is a mis-tap hazard on
+    touch, and KAN-45 brought the link back only because *"opening a tab by
+    accident is annoying and nothing more"*. A status dropdown does not earn
+    that exemption — Status survives on a phone, and a mis-tap there changes
+    data and writes a §2.2 history row.
+  - **The select carries its status colour**, using the same tokens as the
+    badge. A default grey control would cost the list the at-a-glance scan
+    §4.4 chose those nine pairs for.
+  - **Applied optimistically, reverted if the save fails.** A control left
+    showing a value the server rejected is a lie, and whatever is done next
+    would rest on it.
+  - **No re-sort and no refetch.** Sorted by status, a changed row's position
+    goes stale — but rows relocating under the cursor is worse than being
+    briefly out of order.
+  - **Deferred, with a trigger:** restricting detail-screen navigation to the
+    **Role** column rather than the whole row would remove the mis-tap hazard
+    at its source, and with it the reason this control is desktop-only. Worth
+    doing before any further per-row control is added; that constraint has now
+    shaped two decisions.
+
 - **[built] The list filters by source** (KAN-56), from a dropdown between the
   search box and the status filter, defaulting to **All Sources**.
 
@@ -842,6 +870,29 @@ must be updated to match.
     anchor* and opened the detail screen instead, which is the opposite of
     what was pressed.
 
+- **[built] Save and close returns to the list in one action** (KAN-58).
+  Saving was almost always followed by a diagonal trip across the page to a
+  small link in the opposite corner.
+
+  - **Which button was pressed is captured on click and cleared on submit.**
+    Both are `type="submit"` on one form. Clearing matters: if a close fails
+    and Save changes is pressed next, a stale flag would navigate away from
+    an error the user has not read.
+  - **The unsaved-changes guard is not consulted.** It exists for navigations
+    that *discard* typing; this one saves first, so prompting would ask
+    whether to throw away work already stored.
+  - On the new-entry screen it reads **Create and close** and lands on the
+    list rather than the new record — a different intent from the
+    save-add-save-add flow the Add control exists for.
+  - **A hierarchy, not three colours.** Colour encodes consequence, not
+    identity: Cancel quiet, Save changes outlined, Save and close filled.
+    The primary slot goes to Save and close because it is the common path,
+    not because of which control existed first. Two filled buttons would have
+    been the opposite failure — nothing saying which is ordinary.
+  - **The back link became a bordered control** at 36px minimum height,
+    clearing the touch target §1 requires. Still an anchor, so middle-click
+    and open-in-new-tab keep working.
+
 - **[decided]** Archive lives on the detail screen, keeping it away from touch
   targets in the list. Unarchive appears there too when viewing an archived
   application.
@@ -909,7 +960,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 213 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 435 tests, 99% of statements and **100% of functions**, covering
+    Frontend 463 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

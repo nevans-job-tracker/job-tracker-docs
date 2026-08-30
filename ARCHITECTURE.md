@@ -259,6 +259,21 @@ change: the filter, timeline, export and form dropdown all read
 `STATUS_LABELS`, so they picked it up for free, and the parametrised tests
 over that map began covering it automatically.
 
+**KAN-58** added Save and close, and turned the back link into a control
+worth aiming at. The colour question it raised was answered with a hierarchy
+rather than three colours — and the primary slot went to the *new* button,
+because visual weight should follow how often something is used rather than
+which control existed first.
+
+**KAN-59** put a status dropdown in the list on wide screens. Performance was
+the stated worry and was not the issue — 450 option elements against a table
+already rendering ~500 cells. The real constraint was §4.2's mis-tap rule,
+which KAN-45's link escaped and a data-changing control does not, so the
+phone keeps the badge. Shipping it also introduced a 26px narrow-screen
+regression from a `nowrap` that protected against something a `<select>`
+cannot do; caught by measuring the phone breakpoint afterwards, which is the
+one thing jsdom can never check.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -266,7 +281,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 213 tests, 99% statements
-cd job-tracker-frontend && npm test     # 435 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 463 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
