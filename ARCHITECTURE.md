@@ -208,10 +208,24 @@ recording is the only part with a deadline. A timeline and a status-over-time
 graph are the stories it unblocks. **KAN-43** built the first of those: a
 timeline on the detail screen, and the first thing that reads the history.
 
-**The graph is deliberately deferred, not forgotten.** Every application
-currently has one history row, so a chart of it would be a flat line. It is
-worth building once the recording has accumulated something to show — and it
-also needs §7 revising, since reporting is still listed there as a non-goal.
+**The graph is deliberately deferred, and now has a measurable trigger**
+(KAN-61). Measured on 2026-08-30: 128 applications, 132 history rows, but
+only **4 real transitions** — everything else is a creation stamp — and 122
+of the 128 still sit at `interested`. A status-over-time chart is a
+horizontal line with a few pixels of movement at the end. The tracker is
+being used as a shortlist rather than a pipeline.
+
+The trigger is one query rather than a judgement call: build it when
+`SELECT COUNT(*) FROM applications WHERE status <> 'interested'` reaches 20.
+Deliberately not time-based — weeks passing does not put data in the table,
+applying for jobs does.
+
+Note the KAN-42 argument does *not* carry over. That recording shipped ahead
+of anything reading it because history cannot be reconstructed afterwards,
+which is a real deadline. A graph has none: built later it renders the same
+rows plus everything since. KAN-61 also settles the design in advance — a
+separate route, hand-rolled SVG rather than a charting library — and records
+that §7 needs amending, since reporting is still listed there as a non-goal.
 
 **KAN-44** added dark mode. The toggle was the small half; the work was turning
 59 hardcoded colours into role-named tokens so the stylesheet could be themed

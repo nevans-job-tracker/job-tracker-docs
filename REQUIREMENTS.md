@@ -1214,6 +1214,8 @@ rather than after.
 | Authentication + HTTPS | Exposing the app beyond the LAN — static IP / port forwarding. Blocking, see §6.1 |
 | File attachments — the *file itself* | Needing the exact artifact that was sent. The text half is built (KAN-40), so this is now only about fidelity to the original document |
 | Controlled `source` list | Once source values fragment enough to hurt filtering |
+| Status-over-time graph (KAN-61) | When `SELECT COUNT(*) FROM applications WHERE status <> 'interested'` reaches 20. At 4 real transitions across 128 records the chart is a flat line. Needs §7 amended |
+| `effective_at` on `status_changes` (§2.2) | The first time a recorded duration is visibly wrong enough to matter — most likely surfaced by the graph above |
 
 ---
 
@@ -1227,3 +1229,8 @@ Stated so they stop resurfacing:
 - Mobile app (responsive web is sufficient).
 - Public hosting or deployment beyond the owner's own machine.
 - Analytics/reporting dashboards beyond the basic result count.
+  - **Under revision.** §2.2's history table was added after this was
+    written, and KAN-61 will amend this line when its trigger is met — to a
+    single reporting *screen* reading that table, not a dashboard. Recorded
+    here so the graph arrives as an acknowledged change of scope rather than
+    quietly contradicting a stated non-goal.
