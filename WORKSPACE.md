@@ -89,11 +89,16 @@ submodules track `main`.
 Deployment is deliberately manual — one deploy every few weeks does not earn a
 pipeline. The ordering below matters, so follow it rather than improvising.
 
+**`develop`, not `main`.** The server is the place `develop` is proved, and
+`main` is only fast-forwarded to it afterwards — so the deployed checkout
+tracks `develop` and `main` is a record rather than a thing that runs. This
+said `main` until KAN-63; it was wrong from the moment the branches split.
+
 **Backend first**, because restarting it runs the migrations:
 
 ```bash
 cd /opt/job-tracker-backend
-git pull --ff-only origin main
+git pull --ff-only origin develop
 git submodule update --init
 .venv/bin/pip install -r requirements.txt    # only if requirements changed
 sudo systemctl restart job-tracker-backend
@@ -108,7 +113,7 @@ behind its code is worse than one that is down.
 
 ```bash
 cd /opt/job-tracker-frontend
-git pull --ff-only origin main
+git pull --ff-only origin develop
 git submodule update --init
 npm ci
 npm run build
@@ -127,6 +132,37 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost/api/health
 
 The same script the nightly timer runs. It is safe against the live database —
 see `REQUIREMENTS.md` §5 for why that is an assertion rather than a convention.
+
+**Check that both halves moved** (KAN-63):
+
+```bash
+curl -s http://localhost/api/health
+```
+
+It reports the branch and short SHA the backend is running, stamped by the
+unit at start. The app shows a marker whenever it is not on `main`, and says
+so loudly when its own commit and the API's disagree — which is what a
+backend deployed without its frontend looks like. That is the mistake this
+two-step, manually-ordered runbook makes easiest, and it otherwise presents
+as a feature behaving strangely rather than as an error.
+
+The `npm run build` above needs no extra variables: `vite.config.js` reads the
+commit itself, so the stamp cannot be the step that gets forgotten.
+
+`/etc/update-motd.d/98-job-tracker-version` reports the same thing at SSH
+login, alongside the three hooks already there, and catches the two states
+that raise no error on their own — a checkout that moved without a restart, so
+the service is still answering from the previous build, and a checkout behind
+its upstream, i.e. a deploy that was never finished. It does not fetch, so
+"behind" means as of the last fetch. Installed once, like the others:
+
+```bash
+sudo install -m 755 /opt/job-tracker-backend/deploy/motd-job-tracker-version   /etc/update-motd.d/98-job-tracker-version
+```
+
+The unit file also changed, so a deploy carrying KAN-63 needs it copied and
+`sudo systemctl daemon-reload` before the restart, or nothing will be
+stamped and everything will report `unknown`.
 
 **Cold-load a deep URL** afterwards, e.g. `http://<server>/applications/1`
 pasted into a fresh tab. Clicking around inside the app cannot detect a broken
