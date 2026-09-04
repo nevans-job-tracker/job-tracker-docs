@@ -123,6 +123,10 @@ nothing distinguished the two.
   data: one row read `0.00–120000.00`, an annual posting with a bogus zero
   minimum, which the heuristic would have relabelled hourly and hidden. One
   row was corrected by hand instead.
+- **[built] It decides how a row sorts by pay** (KAN-72). The two periods
+  share one pair of columns, so the ordering multiplies an hourly rate out to
+  a year rather than comparing 86 against 120000. See §4.2 — the multiplier
+  reaches the ORDER BY and nothing else.
 - **The stored columns keep their `salary_*` names.** Renaming them is a
   migration that also moves the API surface and the `sort_by` whitelist, to
   buy a better name for something `pay_period` has already disambiguated —
@@ -529,10 +533,9 @@ Consequences:
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
 - **[built]** Sort by company, role, employment type, source, required
-  experience, status, next action date, date added, or date applied — click a header to
-  toggle ascending/descending.
-  Default: date applied, descending. Salary is the one displayed column that is
-  not sortable.
+  experience, status, next action date, date added, date applied, or either end
+  of the pay range — click a header to toggle ascending/descending.
+  Default: date applied, descending.
 
   **[decided] A NULL sorts as though it were greater than every real value**
   (KAN-31). Once `date_applied` became optional this stopped being an
@@ -627,6 +630,50 @@ Consequences:
     `salary_currency` stays in the schema. Dropping it is a migration for no
     gain, and if non-USD work ever matters the field returns as a controlled
     list rather than free text.
+
+- **[built] Pay sorts by either end of the range, and hourly rates are
+  annualised to do it** (KAN-72). Pay was the one displayed column that could
+  not be sorted.
+
+  - **Two keys, because the cell holds a range.** `min` answers "what does this
+    start at", `max` answers "how high could this go", and neither is the
+    obviously correct one to pick on the user's behalf.
+  - **The ORDER BY multiplies an hourly rate by 2080** (40h × 52w). Sorting the
+    stored number does not order the list, it *segregates* it: measured on the
+    real data, 22 of 140 rows are hourly, so descending gives 118 annual rows
+    and then every hourly one, and a $120/hr contract sorts below a $60k
+    salary. "Sort by pay" would have answered which period a row uses rather
+    than what it pays.
+  - **It touches nothing but the ordering.** No stored value changes, and the
+    column still displays `86/hr` — so unlike KAN-50's rejected
+    `salary_min < 1000 => hourly` backfill, this cannot reach the data. That is
+    the distinction that makes the assumption acceptable here and not there.
+  - **2080 is an assumption, and the list says so** — a contract is exactly the
+    case where it may not hold. The result count reads
+    *"hourly rates annualised at 2080 h/yr to order them"* while a pay sort is
+    running and nothing at any other time, the same conditional-note pattern as
+    the hidden count beside it (§4.3) and the insights screen's opening
+    number (§4.5). A note that is always on screen stops being read.
+  - **The header carries two small targets rather than a cycling label.** Every
+    other column is a two-state toggle; making one a four-state cycle would be
+    undiscoverable and inconsistent with the row it sits in. The word "Pay" is
+    deliberately not clickable — a third target would have to mean one of the
+    two keys arbitrarily. They are real `<button>`s, so they are tabbable and
+    announced as controls, which is the KAN-60 anchor rule applied to a header.
+  - Moving between `min` and `max` starts ascending rather than inheriting the
+    other key's direction: they are two columns that happen to share a cell.
+  - **No API surface changed** — the route's `sort_by` whitelist already
+    permitted both columns. The NULL-sorts-greatest rule survives the `CASE`
+    wrapped around the column, which is asserted rather than assumed.
+  - Sorting descending immediately surfaced a data-entry error that had been
+    invisible: one row reading `1,004,000–1,040,000`.
+
+- **[built] The posting link is a target rather than a glyph** (KAN-73). The
+  arrow was roughly 20×16 in a row two to three times as tall, so most of the
+  cell looked clickable and was not. It is now 36px square — the figure KAN-58
+  established for the back link, and there is no reason for two numbers. A
+  negative vertical margin pulls the row's existing padding inside the target,
+  so the rows do not grow to accommodate a control that already fitted.
 
 - **[built] The filtered list exports to CSV** (KAN-39). A green **Export
   CSV** control sits left of **+ Add application**, producing a file that
@@ -1069,9 +1116,9 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 244 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 250 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 540 tests, 99% of statements and **100% of functions**, covering
+    Frontend 550 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

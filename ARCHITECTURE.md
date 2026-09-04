@@ -350,14 +350,35 @@ The third of those was found by a fixture written for something else, and is
 the one that had never been reported — which is the argument for varying
 test data beyond the examples that prompted the work.
 
+**KAN-72** made Pay sortable by either end of the range, and it is the first
+sort that does not order the stored column. Two pay periods share one pair of
+columns, so sorting the number segregates the list rather than ordering it —
+22 of 140 rows are hourly, so descending gave 118 salaries and then every
+rate, with a $120/hr contract below a $60k job. The ORDER BY multiplies an
+hourly rate by 2080.
+
+**The KAN-50 precedent points the other way and does not apply**, which is
+worth being explicit about. That story rejected a `salary_min < 1000 =>
+hourly` backfill because it would have written a wrong fact into the
+database permanently. This assumption reaches the ORDER BY and nothing else:
+no stored value changes, the column still reads `86/hr`, and turning it off
+is a one-line revert. Where an assumption *lands* is what decides whether it
+is acceptable, not how plausible it is.
+
+It is still an assumption — a contract is the case where 2080 is least
+likely to hold — so the result count names the multiplier while a pay sort is
+running and says nothing otherwise. **KAN-73** made the list's posting link
+36px square instead of a ~20×16 glyph, matching the figure KAN-58 set for the
+back link.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 244 tests, 99% statements
-cd job-tracker-frontend && npm test     # 540 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 250 tests, 99% statements
+cd job-tracker-frontend && npm test     # 550 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
