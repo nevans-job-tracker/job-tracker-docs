@@ -223,9 +223,17 @@ its own as real transitions accumulate. §7 is amended rather than contradicted:
 one reporting screen, not a dashboard.
 
 **The left edge is a step, and the screen says so from a number rather than a
-sentence** — 122 records were stamped at the KAN-42 migration, and rendering
-that as a day's activity would be the same fiction the timeline's two notes
-exist to avoid. The note shrinks as history accumulates because it is computed.
+sentence** — the chart opens on 2026-08-23 holding 48 applications, the day
+KAN-42's recording began, and rendering that as a day's activity would be the
+same fiction the timeline's two notes exist to avoid. The note shrinks as
+history accumulates because it is computed.
+
+**Deploying it immediately found a defect the tests had not.** That opening
+number counted history *rows* landing on the first day — 49 — where the chart
+beside it drew 48 applications, because one of them moved twice that day. A
+note contradicting the picture next to it is worse than no note, so it is read
+off the first day's snapshot instead, where the two cannot disagree. Only real
+data had that shape; every fixture written for it did not.
 
 **Shipping it also caught a layout regression it caused** — a fourth control in
 the list header, at 455px against the 402px an iPhone has in portrait, so
@@ -348,7 +356,7 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 243 tests, 99% statements
+cd job-tracker-backend && pytest        # 244 tests, 99% statements
 cd job-tracker-frontend && npm test     # 540 tests, 99% statements, 100% functions
 ```
 

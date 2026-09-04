@@ -1010,10 +1010,15 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   that the chart would join across gaps and imply movement that did not happen.
 - **The left edge is a step, and the screen says so** — but from a *number*
   rather than a fixed sentence, so the note shrinks as real history accumulates
-  instead of going stale. `opening_count` is how many applications enter on the
-  first day; everything predating KAN-42 was stamped at the migration. The same
-  honesty as the timeline's two notes, and §2.2's "recorded, not happened"
-  caveat is repeated here for the same reason.
+  instead of going stale. `opening_count` is how many applications the chart
+  opens with; everything predating KAN-42 was stamped when recording began.
+  The same honesty as the timeline's two notes, and §2.2's "recorded, not
+  happened" caveat is repeated here for the same reason.
+  - **It is read off the first day's snapshot, not counted from the rows
+    landing that day.** Those differ whenever an application moved twice on
+    the opening day, which the deployed data did — 49 rows against 48
+    applications — so the note stated a number the chart beside it
+    contradicted. Derived from the series, the two cannot disagree.
 - **Hand-rolled SVG, no charting library.** The initial bundle is ~207 KB and
   mammoth is lazy-loaded specifically to protect that (§2); a charting library
   is that budget again for one screen. Measured: the chart added ~13 KB.
@@ -1026,8 +1031,8 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   browser would put the logic somewhere each consumer re-derives, and would
   grow the response with the table rather than with the number of days.
   Declared before `/{application_id}`, the same trap `/sources` has.
-- **The chart is only as informative as the data.** At 130 applications with
-  23 outside `interested`, it is a wide flat band with movement at the top —
+- **The chart is only as informative as the data.** At 140 applications with
+  44 outside `interested`, it is a wide flat band with movement at the top —
   which is an accurate picture of a shortlist, and the reason the stacked area
   was chosen over the two designs that would have overstated it.
 
@@ -1064,7 +1069,7 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 243 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 244 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
     Frontend 540 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
