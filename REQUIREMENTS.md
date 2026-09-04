@@ -474,6 +474,7 @@ Consequences:
   | Job link | Wider screens only — an icon, **[built]** KAN-45 |
   | Experience | Wider screens only — **[built]** KAN-47 |
   | Employment type | Wider screens only — **[built]** KAN-51, replacing Location |
+  | Added | Wider screens only — how long ago, in days, **[built]** KAN-68 |
 
   **[decided] The narrow-screen breakpoint is 900px.** The target mobile device
   is an **iPhone 17 Pro**: 402 × 874 CSS pixels, device pixel ratio 3. That means
@@ -525,7 +526,7 @@ Consequences:
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
 - **[built]** Sort by company, role, employment type, source, required
-  experience, status, next action date, or date applied — click a header to
+  experience, status, next action date, date added, or date applied — click a header to
   toggle ascending/descending.
   Default: date applied, descending. Salary is the one displayed column that is
   not sortable.
@@ -702,6 +703,23 @@ Consequences:
     The phone keeps the badge. The question is closed rather than deferred:
     it would take a control that cannot be grabbed mid-scroll, not a change
     of breakpoint.
+
+- **[built] The list shows how long ago each application was added** (KAN-68),
+  as a count of days rather than a date.
+
+  - **The question asked of `created_at` is "how old is this"**, and an ISO
+    date makes the reader do the arithmetic against today. Days answer it
+    directly and stay scannable down a column. The exact timestamp is in a
+    `title` tooltip; sorting uses `created_at` itself, so ordering is exact
+    regardless of display.
+  - **Never rolled up into weeks or months** — §4.4's rule for the timeline,
+    same reason: "2w" and "15d" are the same span but only one compares
+    against its neighbours without thinking.
+  - **Counted by calendar day, not elapsed hours**, so something added at
+    23:59 last night reads as `1d` rather than `Today`. `Today` rather than
+    `0d`, which reads as an absence rather than a value.
+  - Frontend only: `created_at` was already in the list response and already
+    in the route's `sort_by` whitelist.
 
 - **[built] The list filters by source** (KAN-56), from a dropdown between the
   search box and the status filter, defaulting to **All Sources**.
@@ -988,7 +1006,7 @@ must be updated to match.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 213 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 462 tests, 99% of statements and **100% of functions**, covering
+    Frontend 504 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

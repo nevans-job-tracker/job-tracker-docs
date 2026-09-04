@@ -295,6 +295,24 @@ deleted three guards that existed solely because rows were clickable, and
 replaced a `tabIndex` div with real anchors, so middle-click and the keyboard
 work by construction rather than by handler.
 
+**KAN-68** put "how long ago it was added" in the list, as a count of days
+rather than a date — the question asked of `created_at` is age, and a date
+makes the reader do the arithmetic. Frontend only: the column was already in
+the list response and already a permitted sort key.
+
+**KAN-69** fixed the extension reading pay wrongly, from two reported
+postings that turned out to share only the symptom. Four defects: the pattern
+required a literal `$` so `USD 99,000 - 128,500` was invisible; it allowed no
+letters before the closing figure so `R$135,253.01` broke the range; the K/M
+suffix ate the following word's first letter, turning "a $5,000 **m**ay
+apply" into five billion; and the LinkedIn adapter preferred the top card,
+which often carries LinkedIn's own estimate rather than the employer's
+figure.
+
+The third of those was found by a fixture written for something else, and is
+the one that had never been reported — which is the argument for varying
+test data beyond the examples that prompted the work.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -302,7 +320,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 213 tests, 99% statements
-cd job-tracker-frontend && npm test     # 462 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 504 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
