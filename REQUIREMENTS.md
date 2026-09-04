@@ -551,10 +551,31 @@ Consequences:
   puts them at the end, and reversing the sort still reverses the whole list —
   nothing is pinned.
 
-  - Applied to **every** sortable column, not just dates, so there is one
-    rule. Consequence: sorting ascending now puts an empty Location, Source
-    or Next action last, which is the conventional expectation and was
+  - Applied to **every** sortable column except the two pay keys, so there is
+    close to one rule. Consequence: sorting ascending puts an empty Location,
+    Source or Next action last, which is the conventional expectation and was
     previously the other way round.
+  - **[built] Pay is the one stated exception** (KAN-72): a blank sorts last
+    in *both* directions.
+
+    The rule is not weakened by this, because what does not reach pay is the
+    rule's own justification. A missing `date_applied` sorts largest for a
+    reason — an application not yet sent has no date because that date, if it
+    ever exists, is in the future, so "unknown" really is later than every
+    real date. A missing salary is not higher than every salary; it is simply
+    unrecorded. One rule everywhere was a simplification, and pay is the
+    column where the simplification first costs something.
+
+    What it cost, measured on the deployed data: 28 of 140 rows state no pay,
+    so "highest paid first" put the top figure at position 29 — below the
+    fold, which is the same off-screen failure KAN-31 exists to have fixed,
+    arriving through the fix rather than the original behaviour.
+
+    **Deliberately not generalised.** Blanks-always-last on every column
+    would reverse KAN-31's purpose on the default view, sinking un-applied
+    jobs below the Load more control. Both halves are asserted: blanks last
+    in each direction for pay, and `date_applied` descending still leading
+    with the undated.
   - Implemented as a leading `IS NULL` sort key, because MariaDB has no
     `NULLS FIRST` / `NULLS LAST`. The comparison yields 0 or 1 on both it and
     SQLite, so the tests and the deployment agree.
@@ -1116,7 +1137,7 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 250 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 252 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
     Frontend 550 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.

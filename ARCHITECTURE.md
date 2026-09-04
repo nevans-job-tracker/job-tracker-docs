@@ -367,7 +367,16 @@ is acceptable, not how plausible it is.
 
 It is still an assumption — a contract is the case where 2080 is least
 likely to hold — so the result count names the multiplier while a pay sort is
-running and says nothing otherwise. **KAN-73** made the list's posting link
+running and says nothing otherwise.
+
+**Deploying it found the second thing the local data was too small to show.**
+Sorting descending led with the 28 rows stating no pay, putting the top figure
+at position 29 and off the first screen — the same off-screen failure KAN-31
+exists to have fixed, arriving through the fix. Pay is now that rule's one
+stated exception, and the reason is that the rule's own justification is what
+does not reach it: a missing date really is later than every real date, while
+a missing salary is not higher than every salary. Not generalised to other
+columns, which would reverse KAN-31 on the default view. **KAN-73** made the list's posting link
 36px square instead of a ~20×16 glyph, matching the figure KAN-58 set for the
 back link.
 
@@ -377,7 +386,7 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 250 tests, 99% statements
+cd job-tracker-backend && pytest        # 252 tests, 99% statements
 cd job-tracker-frontend && npm test     # 550 tests, 99% statements, 100% functions
 ```
 
