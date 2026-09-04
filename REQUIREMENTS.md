@@ -307,6 +307,9 @@ gets built on it later.
   embedded in the detail response, because `ApplicationOut` is what the CSV
   export reads and embedding would make it lazily load history per row — the
   same N+1 §2.1 exists to prevent. See §4.4.
+- **[built] The insights screen charts it** (KAN-70) — applications per status
+  per day, served by `GET /applications/status-timeline`. The second thing to
+  read this table, and the one the recording shipped early for. See §4.5.
 - Its downgrade refuses while any row exists, and the reason is stronger than
   for the revisions before it: those dropped columns whose values could be
   retyped from a posting, whereas this is the only copy of when each status
@@ -815,6 +818,7 @@ must be updated to match.
 | List | `/` | Sortable, searchable, filterable table (§4.2) |
 | Detail | `/applications/:id` | Full details for one application, editable in place |
 | New | `/applications/new` | Same layout as Detail, empty, for creating an entry |
+| Insights | `/insights` | The status-over-time chart (§4.5) |
 
 - **[built] Company and Role open the detail screen; the rest of the row does
   not** (KAN-60). Rows were wholly clickable, which was the constraint behind
@@ -971,6 +975,62 @@ must be updated to match.
 - **[built]** No backend work is needed for the detail screen — the API already
   serves `GET /applications/{id}`.
 
+### 4.5 Insights
+
+**[built] A status-over-time chart on its own screen** (KAN-70), reading the
+history §2.2 records. This is the second thing to read that table, after the
+detail screen's timeline, and the one KAN-42 shipped early to make possible.
+
+- **A stacked area of applications per status per day, not a funnel.** A funnel
+  — 130 saved, 23 moved on, 1 offer — reads as a *conversion rate*, and that
+  is a claim about a process the search has not run yet: the tracker is still
+  mostly a shortlist, so the same picture that looks like a pipeline with a
+  problem is really a pipeline that has not started. A stacked area claims only
+  "this is what the tracker held on these days", which is true at any volume
+  and corrects itself as the data changes shape. Time-in-stage was rejected for
+  the same reason, plus §2.2's caveat that its durations are recording times.
+- **A separate route rather than a panel on the list.** The list is a worklist,
+  read many times a day to answer "what next"; this answers "how is it going",
+  which is asked far less often, and putting it above the table would push the
+  work down the page every time. A real route is also linkable and leaves on
+  Back, for the reason §4.2 keeps filters in the URL.
+- **The top of the stack is the total**, stroked rather than drawn as a second
+  series. A separately computed total line could disagree with the bands
+  beneath it, and the one thing a stacked chart must not do is contradict
+  itself.
+- **Bands stack in the lifecycle's order and never reorder between days**, so
+  the shape means something; a status absent from the whole range is dropped
+  rather than drawn as a zero-height sliver.
+- **The legend doubles as today's tally**, so the screen answers "where are
+  they now" without reading values off the right-hand edge.
+- **Archived applications are included.** Archiving records whether something
+  should still be in view (§4.1), not something that happened to it — excluding
+  them would make a band shrink on a day when no status changed.
+- **A day with no changes carries the previous day's counts forward.** Without
+  that the chart would join across gaps and imply movement that did not happen.
+- **The left edge is a step, and the screen says so** — but from a *number*
+  rather than a fixed sentence, so the note shrinks as real history accumulates
+  instead of going stale. `opening_count` is how many applications enter on the
+  first day; everything predating KAN-42 was stamped at the migration. The same
+  honesty as the timeline's two notes, and §2.2's "recorded, not happened"
+  caveat is repeated here for the same reason.
+- **Hand-rolled SVG, no charting library.** The initial bundle is ~207 KB and
+  mammoth is lazy-loaded specifically to protect that (§2); a charting library
+  is that budget again for one screen. Measured: the chart added ~13 KB.
+- **Colours come from the `--badge-*` tokens** through one class per status,
+  exactly as the badges do — which is what makes a band and a badge the same
+  colour, and what makes dark mode work without the chart knowing dark mode
+  exists.
+- **`GET /applications/status-timeline` replays the history server-side**,
+  returning one entry per day. Shipping every row and reconstructing it in the
+  browser would put the logic somewhere each consumer re-derives, and would
+  grow the response with the table rather than with the number of days.
+  Declared before `/{application_id}`, the same trap `/sources` has.
+- **The chart is only as informative as the data.** At 130 applications with
+  23 outside `interested`, it is a wide flat band with movement at the top —
+  which is an accurate picture of a shortlist, and the reason the stacked area
+  was chosen over the two designs that would have overstated it.
+
 ---
 
 ## 5. Non-functional requirements
@@ -1004,9 +1064,9 @@ must be updated to match.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 213 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 243 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 504 tests, 99% of statements and **100% of functions**, covering
+    Frontend 540 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
@@ -1232,7 +1292,7 @@ rather than after.
 | Authentication + HTTPS | Exposing the app beyond the LAN — static IP / port forwarding. Blocking, see §6.1 |
 | File attachments — the *file itself* | Needing the exact artifact that was sent. The text half is built (KAN-40), so this is now only about fidelity to the original document |
 | Controlled `source` list | Once source values fragment enough to hurt filtering |
-| Status-over-time graph (KAN-61) | When `SELECT COUNT(*) FROM applications WHERE status <> 'interested'` reaches 20. At 4 real transitions across 128 records the chart is a flat line. Needs §7 amended |
+| ~~Status-over-time graph~~ | **Trigger met and built** (KAN-70) — 44 non-interested against a threshold of 20. See §4.5 |
 | `effective_at` on `status_changes` (§2.2) | The first time a recorded duration is visibly wrong enough to matter — most likely surfaced by the graph above |
 
 ---
@@ -1246,9 +1306,12 @@ Stated so they stop resurfacing:
 - Email or calendar integration.
 - Mobile app (responsive web is sufficient).
 - Public hosting or deployment beyond the owner's own machine.
-- Analytics/reporting dashboards beyond the basic result count.
-  - **Under revision.** §2.2's history table was added after this was
-    written, and KAN-61 will amend this line when its trigger is met — to a
-    single reporting *screen* reading that table, not a dashboard. Recorded
-    here so the graph arrives as an acknowledged change of scope rather than
-    quietly contradicting a stated non-goal.
+- Analytics/reporting dashboards beyond the basic result count — **with one
+  named exception**.
+  - **Amended, as KAN-61 said it would be.** §4.5's insights screen is that
+    exception: one screen, one chart, reading the §2.2 history table. It is
+    scope this line originally excluded, and it was pulled in deliberately
+    once KAN-61's trigger was met rather than by drift.
+  - **The non-goal still holds for everything else.** A second chart is a new
+    decision, not something §4.5 has already licensed — the line reads "one
+    reporting screen", not "reporting is now in scope".

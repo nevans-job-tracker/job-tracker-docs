@@ -208,17 +208,46 @@ recording is the only part with a deadline. A timeline and a status-over-time
 graph are the stories it unblocks. **KAN-43** built the first of those: a
 timeline on the detail screen, and the first thing that reads the history.
 
-**The graph is deliberately deferred, and now has a measurable trigger**
+**The graph is built** (KAN-70) — the trigger below was met, at 44
+applications outside `interested` against a threshold of 20. It is a stacked
+area of applications per status per day on its own `/insights` route, hand-
+rolled SVG reading the same `--badge-*` tokens the list does, and it adds
+~13 KB rather than a charting library's share of the bundle.
+
+**Two designs were rejected before that one**, and for the same reason. A
+funnel and a time-in-stage bar both encode a claim about a *process* — "130
+saved, 23 moved on, 1 offer" reads as a conversion rate — and while the tracker
+is still mostly a shortlist that claim is false. A stacked area says only "this
+is what was held on these days", which is true at any volume and improves on
+its own as real transitions accumulate. §7 is amended rather than contradicted:
+one reporting screen, not a dashboard.
+
+**The left edge is a step, and the screen says so from a number rather than a
+sentence** — 122 records were stamped at the KAN-42 migration, and rendering
+that as a day's activity would be the same fiction the timeline's two notes
+exist to avoid. The note shrinks as history accumulates because it is computed.
+
+**Shipping it also caught a layout regression it caused** — a fourth control in
+the list header, at 455px against the 402px an iPhone has in portrait, so
+"+ Add application" left the screen entirely. Found by measuring the phone
+breakpoint in a browser, which is the one thing jsdom can never check. The fix
+is the shrink rules, and they are easy to get backwards: the container has to
+be allowed to narrow so its children have a reason to wrap, while the controls
+inside must not, or they squeeze into mis-tap-sized targets instead.
+
+*The original deferral, kept because the trigger is the argument:*
+
+**The graph was deliberately deferred, with a measurable trigger**
 (KAN-61). Measured on 2026-08-30: 128 applications, 132 history rows, but
 only **4 real transitions** — everything else is a creation stamp — and 122
 of the 128 still sit at `interested`. A status-over-time chart is a
 horizontal line with a few pixels of movement at the end. The tracker is
 being used as a shortlist rather than a pipeline.
 
-The trigger is one query rather than a judgement call: build it when
+The trigger was one query rather than a judgement call: build it when
 `SELECT COUNT(*) FROM applications WHERE status <> 'interested'` reaches 20.
 Deliberately not time-based — weeks passing does not put data in the table,
-applying for jobs does.
+applying for jobs does. It was met five days later.
 
 Note the KAN-42 argument does *not* carry over. That recording shipped ahead
 of anything reading it because history cannot be reconstructed afterwards,
@@ -319,8 +348,8 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 213 tests, 99% statements
-cd job-tracker-frontend && npm test     # 504 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 243 tests, 99% statements
+cd job-tracker-frontend && npm test     # 540 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
