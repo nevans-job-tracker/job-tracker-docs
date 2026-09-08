@@ -380,6 +380,25 @@ columns, which would reverse KAN-31 on the default view. **KAN-73** made the lis
 36px square instead of a ~20×16 glyph, matching the figure KAN-58 set for the
 back link.
 
+**KAN-74** put the record id in the list as its first column. It was the one
+field the list never showed, and it stopped being an internal detail once
+tooling outside the app began addressing records by id — cover-letter
+generation reads a posting from `GET /applications/{id}` and writes back to the
+same row, so every such command starts with "which id is that".
+
+**It is worth reading for the decision it reverses.** The story specified an
+unsortable column, because `created_at` already produces that exact order —
+both are assigned by the server on insert — so a second control would buy an
+ordering that already existed, at the cost of widening the `sort_by` whitelist.
+The header row overturned it: every neighbouring header is clickable, and one
+that is not reads as broken rather than as deliberate. Consistency across the
+row won, `id` joined the whitelist, and what was scoped as frontend-only became
+a two-repo change.
+
+That divergence is the reason it is written down. The story still says "not
+sortable", and §4.2 has already been corrected once (KAN-48) for exactly this —
+documented scope drifting away from what the code does.
+
 **KAN-79** added a `scam` status, for a posting that turns out to be
 fraudulent. `posting_closed` was the nearest and says the opposite thing — that
 a real opportunity ended — so filing the two together would overstate how many

@@ -499,6 +499,7 @@ Consequences:
 
   | Column | Visibility |
   |---|---|
+  | Id | Wider screens only — the record id, **[built]** KAN-74 |
   | Company | Always |
   | Status | Always |
   | Next action | Always |
@@ -560,9 +561,9 @@ Consequences:
 
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
-- **[built]** Sort by company, role, employment type, source, required
-  experience, status, next action date, date added, date applied, or either end
-  of the pay range — click a header to toggle ascending/descending.
+- **[built]** Sort by record id, company, role, employment type, source,
+  required experience, status, next action date, date added, date applied, or
+  either end of the pay range — click a header to toggle ascending/descending.
   Default: date applied, descending.
 
   **[decided] A NULL sorts as though it were greater than every real value**
@@ -723,6 +724,52 @@ Consequences:
   established for the back link, and there is no reason for two numbers. A
   negative vertical margin pulls the row's existing padding inside the target,
   so the rows do not grow to accommodate a control that already fitted.
+
+- **[built] The record id is the list's first column** (KAN-74). It is the
+  only way to name one application from outside the app, and it was the one
+  field the list never showed — reachable only by opening a record and reading
+  `/applications/:id` out of the address bar.
+
+  That was fine while the app was the only thing touching the data. It stopped
+  being fine once tooling outside the app began addressing records by id:
+  cover-letter generation reads a posting from `GET /applications/{id}` and
+  writes back to the same row, and every such command starts with *"which id is
+  that"*.
+
+  - **Far left, ahead of Company.** An identifier labels the row rather than
+    describing it, so it reads as a gutter — the same reason a spreadsheet puts
+    row numbers outside the data.
+  - **`col-wide`, so it does not render below 900px.** The four columns that
+    survive on a phone are Company, Status, Next action and Date applied, and
+    an id earns none of that width: it exists to be copied into a terminal,
+    which is not something done on a phone. This also protects Company's record
+    link, which is load-bearing precisely on that screen (§4.4) and would be
+    pushed off the left edge by a permanently visible id.
+  - **It is *not* the record link.** Company and Role already link to
+    `/applications/{id}` and the id is literally the href, so a third target to
+    the same place adds a destination-free control and makes the column look
+    like a way in when its job is to be read and copied. Plain text also means
+    selecting it does not drag-start a link, which is what copying an id
+    actually involves.
+  - **It sorts, and that reverses the story's own first decision.** `id` was to
+    be unsortable, on the grounds that `created_at` already produces that exact
+    order — both are assigned by the server on insert — and that admitting it
+    would widen the `sort_by` whitelist to buy an ordering that already exists.
+    What overturned it is the header row: every neighbouring header is
+    clickable, and one that is not reads as broken rather than as a decision.
+    Consistency across the row was judged worth more than avoiding a second
+    route to one ordering.
+  - **So it was not frontend-only after all.** `id` is in the route's `sort_by`
+    whitelist, which is the API surface change the original reasoning was
+    trying to avoid. Recorded because the story still reads "not sortable", and
+    §4.2 has been corrected once already (KAN-48) for exactly this drift of
+    documented scope against shipped behaviour.
+  - **It is the one sort key the NULL rule above cannot touch.** A primary key
+    is never NULL, so the leading `IS NULL` term is uniformly false — neither
+    the KAN-31 rule nor the KAN-72 exception has anything to do here.
+  - **The CSV export already led with it.** `APPLICATION_COLUMNS` opens with
+    `ID` because that list follows §2's declaration order, so no export change
+    was needed. The table was the only place the id was missing.
 
 - **[built] The filtered list exports to CSV** (KAN-39). A green **Export
   CSV** control sits left of **+ Add application**, producing a file that
