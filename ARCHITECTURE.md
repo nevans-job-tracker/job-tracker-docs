@@ -441,6 +441,29 @@ a repo-wide substitution that also rewrote the *committed* KAN-74 references in
 the Id-column work, and had to be unpicked file by file. A number in a comment
 is not a safe target for a blanket replace once more than one thread is open.
 
+**KAN-80** gave the list table a scroll container. It had never had one, so
+its overflow reached the document — the *page* carried the horizontal
+scrollbar, and the header and filters slid sideways with the table. The
+asymmetric gutters reported alongside it were the same defect: a block
+container does not extend its padding to overflowing content, so the left 16px
+was honoured and the right 16px was not.
+
+**Nothing caused it; twelve columns did.** Experience, employment type, Added,
+the pay header gaining two sort keys and Id prepended, each fine on its own,
+until min-content reached 1175px against a 1068px content box.
+
+It scrolls on a wide screen too, which is deliberate: widening `.container`
+would widen the detail form with it, `App.jsx` wrapping every route in that one
+element. Measured before and after at 1265px rather than reasoned about —
+gutters `91 / -16` to `91 / 91`, and the table stopped running 107px past the
+header.
+
+**A process note worth keeping.** The wrapper was first applied with `npx
+prettier`, which is not a dependency of this repo and reformatted the whole
+file — 171 insertions of unrelated reflowing around a five-line change. Reverted
+and redone by hand. Reaching for a formatter the project does not use turns a
+reviewable diff into an unreviewable one.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -448,7 +471,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 259 tests, 99% statements
-cd job-tracker-frontend && npm test     # 559 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 561 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
