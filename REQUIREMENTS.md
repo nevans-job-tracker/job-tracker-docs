@@ -1350,6 +1350,12 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
     regardless: deciding case by case which migrations "need" a rehearsal is
     how the habit erodes.
 
+    **Repeated after KAN-79** (`bc35cc0e64a5`, 17s), the second enum append
+    and the second consecutive run of that shape. 144 applications, 7 archived
+    records, and the contact join all matched, and both revisions read
+    `bc35cc0e64a5`. Triggered by the MOTD hook rather than by memory, which is
+    now how every rehearsal since KAN-40 has started.
+
     Repeat after any schema change ships through Alembic. A restore path is
     only as good as the schema it restores into.
 

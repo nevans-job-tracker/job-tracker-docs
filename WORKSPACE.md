@@ -171,7 +171,7 @@ reaching nginx.
 
 ## Restoring
 
-Verified end to end six times, using only what would survive the loss of the
+Verified end to end seven times, using only what would survive the loss of the
 machine:
 
 | When | Schema | Result |
@@ -182,6 +182,7 @@ machine:
 | 2026-08-23, after KAN-42 | `83ffeed76a6f` | **20s**, now the routine |
 | 2026-08-25, after KAN-51 | `9c1e7d4b8a52` | **27s**, the largest schema delta yet |
 | 2026-08-30, after KAN-57 | `b3e51f0a7c46` | **18s**, the first enum change |
+| 2026-09-08, after KAN-79 | `bc35cc0e64a5` | **17s**, the second enum append |
 
 Each repeat was the rule below being followed. All but the first ran against
 artifacts from `job-tracker-backup.service` started by hand rather than by the
@@ -191,6 +192,12 @@ timer — the same unit, script and upload path, only the trigger differed.
 migration landed and the login banner started saying the rehearsal was out of
 date on its own. That is the drift check below working as designed rather than
 as a test, and it has become the normal way this happens.
+
+**The seventh confirms the sixth was not a one-off.** `bc35cc0e64a5` appends
+`scam` the same way `b3e51f0a7c46` appended `posting_closed`, and it restored
+in 17s with all 144 applications, the 7 archived records and the contact join
+matching. Two runs of the same shape in a row is what turns "it worked" into
+"this is what this kind of migration does".
 
 **The sixth is the first that altered an *enum* rather than adding columns**,
 and it is the mildest case the rule has met: appending a value is backward
