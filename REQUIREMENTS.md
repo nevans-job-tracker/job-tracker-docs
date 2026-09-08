@@ -512,6 +512,9 @@ Consequences:
   | Employment type | Wider screens only — **[built]** KAN-51, replacing Location |
   | Added | Wider screens only — how long ago, in days, **[built]** KAN-68 |
 
+  That table groups by *visibility*, not by position. Left-to-right order is a
+  separate decision — see the column-order block below.
+
   **[decided] The narrow-screen breakpoint is 900px.** The target mobile device
   is an **iPhone 17 Pro**: 402 × 874 CSS pixels, device pixel ratio 3. That means
   402px wide in portrait and **874px in landscape** — so a conventional 768px
@@ -558,6 +561,41 @@ Consequences:
 
   A stacked-card layout for narrow screens remains a reasonable fallback if four
   columns still prove cramped in practice, but is not planned.
+
+- **[built] Columns read identity, then actions, then reference** (KAN-64).
+  The order was Company, **Link**, Role with Status seventh, which got two
+  things wrong at once.
+
+  **Link was wedged between Company and Role.** Since KAN-60 those two cells
+  are the same link to the same detail screen — one idea — and a third column
+  between them broke it into two unrelated-looking halves.
+
+  **Link and Status are the row's only two interactive controls, and they sat
+  five columns apart.** The flow that exposes it: click the link icon to check
+  whether a posting is still live, find it gone, close the tab — and the
+  pointer is now in the Link column while setting **Posting Closed** means
+  dragging all the way across the table. A round trip paid once per row, on a
+  table past a hundred rows.
+
+  The order is now Company, Role, Link, Status, then Type, Source, Experience,
+  Pay, Next action, Added, Applied — with Id prepended later by KAN-74, which
+  keeps the rule rather than bending it, an id being identity. Nothing was
+  added or removed; the same columns in a different order.
+
+  - **`thead` and `tbody` are two separate lists in the same file**, and that
+    is the whole risk. If they drift the table misaligns *silently* — every
+    value under the wrong heading, nothing thrown, no error anywhere. A test
+    now reads the headings and asserts each cell sits under its own, which is
+    a check that was missing generally rather than only for this change.
+  - **It immediately caught a test that had been passing for the wrong
+    reason.** The employment-type test asserted on `row.cells[3]` and was green
+    only because Type happened to be fourth at the time. It now finds its
+    column by heading. A fixed index records which cell was checked, not which
+    column it belonged to — so it survives a reorder that breaks the thing it
+    exists to protect.
+  - **Narrow screens are unaffected**, because `col-wide` travels with each
+    column rather than with a position. The phone still shows Company, Status,
+    Next action and Applied.
 
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).

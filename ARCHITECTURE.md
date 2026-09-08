@@ -332,6 +332,23 @@ deleted three guards that existed solely because rows were clickable, and
 replaced a `tabIndex` div with real anchors, so middle-click and the keyboard
 work by construction rather than by handler.
 
+**KAN-64** reordered the list columns to identity, then actions, then
+reference. Link had been sitting between Company and Role — the two cells that
+are the same link to the same screen since KAN-60 — and the row's only two
+controls, Link and Status, were five columns apart. The flow that exposes the
+second: check whether a posting is still live, close the tab, and the pointer
+is in the Link column while marking it closed means crossing the whole table,
+once per row, on a table past a hundred rows.
+
+**The interesting part is not the reorder, it is what the reorder broke.**
+`thead` and `tbody` are two separate lists in the same file, so if they drift
+the table misaligns with nothing thrown — every value under the wrong heading,
+no error anywhere. The test written to guard that immediately caught an
+existing test which asserted on `row.cells[3]` and had been green only because
+Type happened to be fourth. A fixed index records which cell was checked, not
+which column it belonged to, so it survives exactly the change it should
+catch. Tests now find their column by heading.
+
 **KAN-68** put "how long ago it was added" in the list, as a count of days
 rather than a date — the question asked of `created_at` is age, and a date
 makes the reader do the arithmetic. Frontend only: the column was already in
