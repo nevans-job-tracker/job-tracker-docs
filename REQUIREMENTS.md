@@ -46,7 +46,7 @@ declaration order.
 | `location` | string(255) | no | |
 | `company_size` | enum | no | Wellfound's six bands — see below |
 | `years_experience_min` | smallint | no | Minimum only; `0` means entry level and is distinct from blank |
-| `status` | enum | yes, defaults `applied` | Nine values, freely assignable — §3 |
+| `status` | enum | yes, defaults `applied` | Ten values, freely assignable — §3 |
 | `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
 | `salary_max` | decimal(10,2) | no | |
 | `salary_currency` | string(10) | no, defaults `USD` | |
@@ -347,8 +347,8 @@ gets built on it later.
 
 ## 3. Status lifecycle
 
-Nine statuses: `interested`, `applied`, `phone_screen`, `interview`, `offer`,
-`rejected`, `ghosted`, `posting_closed`, `withdrawn`.
+Ten statuses: `interested`, `applied`, `phone_screen`, `interview`, `offer`,
+`rejected`, `ghosted`, `posting_closed`, `scam`, `withdrawn`.
 
 **[decided] `interested` marks a job not yet applied for** (KAN-31). It is
 the pair to an empty `date_applied` (§2): without it, a job you intend to
@@ -396,6 +396,34 @@ phone screen" would count ads that were never live long enough to answer.
   same enum twice — without those, a transition *into* the new status could
   not be recorded. Its downgrade counts both tables: a history row can hold
   the value when no application currently does.
+
+**[decided] `scam` marks a posting that turned out to be fraudulent**
+(KAN-79).
+
+`posting_closed` is the nearest value and it is the *opposite* claim: that a
+real opportunity ended. A scam says there was never an opportunity to end.
+Filing the two together would overstate how many genuine roles the search
+actually saw, and would corrupt the question `posting_closed` was added to
+keep answerable — how many ads closed on their own. `rejected` and `ghosted`
+are wrong for the reason KAN-57 already recorded: both assert something about
+how a real employer treated the candidate.
+
+- **Inactive by construction, not by listing.** Both `ACTIVE_STATUSES`
+  complements — the model's and the frontend's — compute the inactive set
+  rather than enumerating it (KAN-62), so this landed in Inactive without
+  either being edited, and a scam drops out of the default worklist without
+  being archived. Asserted on both sides anyway: arriving in the right group
+  for free is precisely what would make a later change to that derivation
+  silent.
+- **Appended to the enum**, for the same ordinal reason as `interested` and
+  `posting_closed`. Its display position is the frontend's, beside
+  `posting_closed` — the two statuses that describe the *posting* rather than
+  the application sit together, even though they claim opposite things.
+- **The revision moves three columns**, because `status_changes` carries the
+  enum twice. Its downgrade refuses while anything holds the value and counts
+  both tables.
+- **Its badge is the one solid rather than a tint**, and that is a decision
+  rather than a palette accident — see §4.4.
 
 **[decided] Free assignment.** Any status may be set to any other status at any
 time. There is no transition validation, no terminal states, and no required
@@ -965,6 +993,16 @@ must be updated to match.
     tints with dark text; flipping them by formula produces colours that glare
     against a dark page, so each carries its own pair chosen to sit at the same
     visual weight as the surface behind it.
+  - **`scam` is the one exception, and it is deliberate** (KAN-79). A pale
+    rose was tried first and failed the only test that matters: beside
+    `rejected` it read as another pale wash, and mistaking a scam for a
+    rejection is exactly the confusion that status exists to prevent. The
+    palette has no free hue left — red is rejected, the warm range is phone
+    screen and interview, purple is withdrawn — so what separates it is
+    **weight, not hue**. That is also the honest signal: every other status
+    describes an ordinary outcome of a real process, and this one says the
+    posting was fraudulent, so being the odd one out is the point. It carries
+    the same pair in both themes, being mid-dark enough to glare on neither.
 
 - **[built] The job posting opens in a new tab** (KAN-45), from the list's
   link column and from an **Open posting** control beside the Job link field
@@ -1137,9 +1175,9 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 252 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 259 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 550 tests, 99% of statements and **100% of functions**, covering
+    Frontend 559 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

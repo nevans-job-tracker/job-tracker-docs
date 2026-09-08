@@ -380,14 +380,39 @@ columns, which would reverse KAN-31 on the default view. **KAN-73** made the lis
 36px square instead of a ~20×16 glyph, matching the figure KAN-58 set for the
 back link.
 
+**KAN-79** added a `scam` status, for a posting that turns out to be
+fraudulent. `posting_closed` was the nearest and says the opposite thing — that
+a real opportunity ended — so filing the two together would overstate how many
+genuine roles the search saw.
+
+It needed no lifecycle change at all, which is KAN-62's design paying off: both
+`ACTIVE_STATUSES` complements compute the inactive set rather than listing it,
+so a value appended to the enum is Inactive by construction. Asserted on both
+sides regardless, because landing in the right group for free is what would
+make a later change to that derivation silent.
+
+**Its badge is the one solid rather than a light tint.** A pale rose was tried
+first and failed beside `rejected`, where it read as another pale wash —
+mistaking a scam for a rejection being the exact confusion the status exists to
+prevent. With no free hue left in the palette, the separator is weight rather
+than hue, which is also the honest signal: every other status describes an
+ordinary outcome of a real process.
+
+**A note on numbering.** This work was drafted as KAN-74 and renumbered before
+anything was committed: KAN-74 through KAN-78 had been claimed by concurrent
+work while it was in progress. Worth recording because the rename was done with
+a repo-wide substitution that also rewrote the *committed* KAN-74 references in
+the Id-column work, and had to be unpicked file by file. A number in a comment
+is not a safe target for a blanket replace once more than one thread is open.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 252 tests, 99% statements
-cd job-tracker-frontend && npm test     # 550 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 259 tests, 99% statements
+cd job-tracker-frontend && npm test     # 559 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
