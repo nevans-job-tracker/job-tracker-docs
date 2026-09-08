@@ -441,28 +441,38 @@ a repo-wide substitution that also rewrote the *committed* KAN-74 references in
 the Id-column work, and had to be unpicked file by file. A number in a comment
 is not a safe target for a blanket replace once more than one thread is open.
 
-**KAN-80** gave the list table a scroll container. It had never had one, so
-its overflow reached the document — the *page* carried the horizontal
-scrollbar, and the header and filters slid sideways with the table. The
-asymmetric gutters reported alongside it were the same defect: a block
-container does not extend its padding to overflowing content, so the left 16px
-was honoured and the right 16px was not.
+**KAN-80** stopped the list table overflowing its container. It had spilled
+past `.container` with nothing containing it, so the *page* carried the
+horizontal scrollbar and the header and filters slid sideways with the table.
+The asymmetric gutters reported alongside were the same defect: a block
+container cannot extend padding to overflowing content.
 
 **Nothing caused it; twelve columns did.** Experience, employment type, Added,
 the pay header gaining two sort keys and Id prepended, each fine on its own,
 until min-content reached 1175px against a 1068px content box.
 
-It scrolls on a wide screen too, which is deliberate: widening `.container`
-would widen the detail form with it, `App.jsx` wrapping every route in that one
-element. Measured before and after at 1265px rather than reasoned about —
-gutters `91 / -16` to `91 / 91`, and the table stopped running 107px past the
-header.
+**It shipped wrong first, and that is the part worth keeping.** The initial fix
+wrapped the table in `overflow-x: auto`. That did fix the page scrollbar and
+the gutters — measured, both correct — and was still the wrong answer: it
+traded them for a clipped table on a monitor with ~160px of empty gutter either
+side. Fixing the overflow is not the same as fixing the layout, and a fix that
+satisfies the ticket while making the screen worse is not done.
 
-**A process note worth keeping.** The wrapper was first applied with `npx
-prettier`, which is not a dependency of this repo and reformatted the whole
-file — 171 insertions of unrelated reflowing around a five-line change. Reverted
-and redone by hand. Reaching for a formatter the project does not use turns a
-reviewable diff into an unreviewable one.
+What replaced it is a priority order rather than a mechanism: the table never
+scrolls itself, the side padding collapses before the table has to give up
+space, and only then does the page scroll. The list also drops the 1100px cap
+the other screens keep — that is a *reading* width chosen for the detail form,
+and a table is not prose.
+
+One unit change carried the whole thing: `100vw` includes the vertical
+scrollbar, so at the moment the padding is closing it overstated the space by
+the scrollbar's width — 10px of padding where 2.5px fitted, which put the table
+back past the right edge with padding still on the left. `100%` resolves
+against the content width instead.
+
+**A process note.** The wrapper was first applied with `npx prettier`, which is
+not a dependency of this repo and reformatted the whole file — 171 insertions
+of unrelated reflowing around a five-line change. Reverted and redone by hand.
 
 ## Testing
 
@@ -471,7 +481,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 259 tests, 99% statements
-cd job-tracker-frontend && npm test     # 561 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 562 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

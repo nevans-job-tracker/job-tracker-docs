@@ -756,42 +756,57 @@ Consequences:
   - Sorting descending immediately surfaced a data-entry error that had been
     invisible: one row reading `1,004,000–1,040,000`.
 
-- **[built] The table scrolls inside itself, not the page** (KAN-80). It had
-  no scroll container at all, so its overflow reached the document.
+- **[built] The table is never the thing that scrolls** (KAN-80). It had
+  overflowed `.container` with nothing containing it, so the *page* carried the
+  horizontal scrollbar — header, filters and result count sliding sideways with
+  the table — and the gutters went asymmetric, a block container being unable
+  to extend its padding to overflowing content.
 
-  Two symptoms that read as separate bugs and are one. The **page** grew the
-  horizontal scrollbar, so scrolling right slid the header, filters and result
-  count sideways with the table. And the gutters went asymmetric — a block
-  container does not extend its padding to overflowing content, so
-  `.container`'s left 16px was honoured, the table starting inside the padding
-  box, while the right 16px was not, because the table escaped it.
+  Three rules, in priority order:
 
-  Measured at 1265px before and after, on the real data: gutters `91 / -16`
-  became `91 / 91`, the page stopped scrolling sideways, and the table stopped
-  extending 107px past the header.
+  1. **The table never scrolls itself.** A scrollbar inside the table hides
+     columns while the window still has room for them, and the row being read
+     stops lining up with the header it is read under.
+  2. **The side padding yields before the table does.** It is breathing room
+     rather than structure, so it collapses as the window narrows and reaches
+     zero just as the table starts needing that space. This is also what makes
+     the gutters symmetric again: once there is no padding left, there is
+     nothing to be lopsided.
+  3. **Then, and only then, the page scrolls.** A window genuinely narrower
+     than the table has to overflow somewhere, and the page is the honest
+     place — everything stays aligned and nothing is hidden inside a box.
 
-  - **The card treatment moved to the wrapper.** The rounded corners came from
-    `overflow: hidden` on the table; the scroll container clips now, so the
-    radius has to live where the clipping does or the header row's corners go
-    square.
-  - **It scrolls even on a wide screen, and that is deliberate.**
-    `.container` is capped at 1100px — a 1068px content box — and the table's
-    min-content is 1175px for its twelve columns, so it does not fit at any
-    viewport width. Widening the container would widen the **detail form**
-    with it, since `App.jsx` wraps every route in that one element and the
-    form has no width of its own. Whether this screen deserves to be wider
-    than the rest of the app is a separate decision, not a side effect of
-    fixing an overflow.
+  - **The list has no max-width; the other screens keep 1100px.** That figure
+    is a *reading* width chosen for the detail form, and a table is not prose.
+    Applying it to twelve columns needing 1175px forced a scroll on a monitor
+    with room to spare. `App.jsx` wraps every route in one element, so the
+    width is chosen per route rather than widened for all.
+  - **`100%`, not `100vw`, in the collapsing padding** — and they are not
+    interchangeable. `100vw` includes the vertical scrollbar, so at the moment
+    the padding is closing it overstates the available space by the
+    scrollbar's width. Measured: 10px of padding where 2.5px fitted, putting
+    the table 10px past the right edge with 10px still on the left — exactly
+    the asymmetry being removed, reintroduced by the unit.
+  - **The 1180px reference drifts with the columns.** Too low and a sliver of
+    asymmetric padding returns; too high and the padding disappears earlier
+    than it needs to. It is the one hand-tuned number here.
+  - **Below 900px the padding does not collapse**, because `col-wide` has
+    already hidden eight columns and the padding is doing its ordinary job.
+    The four survivors currently need ~460px, so a 402px phone still scrolls
+    the page with a lopsided gutter — **pre-existing**, unchanged by this, and
+    a separate question about the narrow column set rather than about overflow.
   - **The cause was accumulation, not one change.** Experience (KAN-47),
     employment type (KAN-51), Added (KAN-68), the two pay sort keys widening
-    the Pay header (KAN-72) and Id prepended (KAN-74) — twelve columns against
-    a 1068px budget.
-  - Not a mobile defect: below 900px `col-wide` hides eight of the twelve and
-    the remaining four fit.
-  - **jsdom cannot see any of this** (§5). The test asserts the structure that
-    confines the overflow — that the table sits inside `.table-scroll` — which
-    is what a later refactor would remove without noticing. The behaviour it
-    protects was verified by measuring a real viewport.
+    the Pay header (KAN-72) and Id prepended (KAN-74).
+  - **jsdom cannot see any of this** (§5). The tests assert the route-dependent
+    width, which is the decision; every geometric claim above was measured
+    against a real viewport at 1785, 1360, 1185, 1105 and 375.
+  - **A wrong turn worth recording.** This first shipped as an
+    `overflow-x: auto` wrapper around the table, which fixed the page
+    scrollbar and the gutters and was still wrong: it traded them for a
+    clipped table on a screen with ~160px of empty gutter either side. Fixing
+    the overflow was not the same as fixing the layout, and the wrapper had to
+    come back out.
 
 - **[built] The posting link is a target rather than a glyph** (KAN-73). The
   arrow was roughly 20×16 in a row two to three times as tall, so most of the
@@ -1299,7 +1314,7 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 259 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 561 tests, 99% of statements and **100% of functions**, covering
+    Frontend 562 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
