@@ -516,15 +516,66 @@ em dash. That is a strictly better default on its own (a dash was a poor touch
 target and said less), and it happens to resolve the dangerous case for free:
 "Unknown" becomes the link text on exactly the row that needed one.
 
-**Verified locally rather than on the deployed server**: the migration
-applies from baseline to head and reverses cleanly on an empty table, and
-separately refuses once a row is marked a favorite — matching every revision
-since KAN-31. A live backend and a real browser session confirmed the sort,
-the optimistic toggle-and-revert, and both Source permutations (a link with
-no source rendering "Unknown" as the anchor; a source with no link rendering
-plain text) behave exactly as specced. Deploying it is still owed, in the
-usual order (`WORKSPACE.md`) — and per §5, a migration shipping through
-Alembic means a restore rehearsal is owed once it does.
+**Verified locally before it shipped**: the migration applies from baseline to
+head and reverses cleanly on an empty table, and separately refuses once a row
+is marked a favorite — matching every revision since KAN-31. A live backend
+and a real browser session confirmed the sort, the optimistic
+toggle-and-revert, and both Source permutations (a link with no source
+rendering "Unknown" as the anchor; a source with no link rendering plain text)
+behave exactly as specced.
+
+**Deployed the same day**, in the usual order (`WORKSPACE.md`): backend first,
+`/api/health` confirmed the running revision, then the frontend, then a cold
+load of the deployed list against the real production data — the star
+column, the sort, and Source-as-link all rendered against it as expected. The
+restore rehearsal owed by a migration (§5) was run and passed.
+
+**KAN-77** fixed a default sort that was not ordering anything. The default
+was `date_applied` descending, and 145 of 147 deployed records have no
+`date_applied` — so almost every row on the default view tied on a NULL key,
+and the tie broke as ascending id. The list opened oldest-first, and a
+just-saved application landed at the bottom, often behind Load more on a table
+past 50 rows — exactly the case that matters, since saving from the extension
+and then looking for the row is the common path.
+
+**The fix is `created_at` descending — already the Added column's sort key
+(KAN-68) — named as such rather than as `id`.** They produce the same order,
+both being assigned by the server on insert, so this was a choice of which
+one to *name*: Added wins because the arrow then sits on the column a reader
+is actually looking at when asking "what's newest." An earlier draft
+specified `id` on the grounds that it is exact where Added's rendering is
+deliberately coarse (KAN-68 shows "Today" and "1d", which cannot distinguish
+two records saved an hour apart) — true, and beside the point, since the
+coarseness is in the *display* and the ordering reads the underlying
+timestamp regardless of which column is named.
+
+**One test was asserting the rule for the wrong reason, and this is the
+second time that shape of bug has turned up in this project** (KAN-64 found
+a fixed cell index passing for the same reason). `TestNullSortOrder`'s
+"leads the default view" test called the bare endpoint and checked that an
+undated record sorted first — which had been true only because the *old*
+default happened to be `date_applied`. Once the default moved, the test kept
+passing by coincidence (created-at-descending put the same row first, since
+it was also created last) rather than because the KAN-31 rule it was meant
+to pin had anything to do with the request being made. Fixed to state
+`sort_by=date_applied` explicitly, which is what the test actually needs to
+be true.
+
+**`created_at`'s own second-resolution timestamps could have produced the
+same kind of accidental pass.** `CURRENT_TIMESTAMP` on SQLite — and
+`DATETIME` without extra precision on MariaDB — has one-second resolution,
+so three rows inserted back-to-back inside a test regularly land in the same
+second. Measured directly: three same-second SQLite rows sorted `DESC` came
+back in ascending id order, not reversed, so a naive "newest first" test
+seeded by rapid API calls would have been pinned to insertion order by luck
+rather than to the sort. The new tests set `created_at` by hand for the rows
+that need to be distinguishable, rather than trust the clock to separate
+them.
+
+Verified live the same way KAN-81 was: a bare request matched an explicit
+`sort_by=created_at&sort_dir=desc`, and an explicit `sort_by=date_applied`
+still put the undated row first — confirming KAN-31's rule survived the
+default changing out from under it.
 
 ## Testing
 
@@ -532,7 +583,7 @@ Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 265 tests, 99% statements
+cd job-tracker-backend && pytest        # 266 tests, 99% statements
 cd job-tracker-frontend && npm test     # 578 tests, 99% statements, 100% functions
 ```
 

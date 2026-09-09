@@ -527,7 +527,7 @@ Consequences:
   | Company | Always |
   | Status | Always |
   | Next action | Always |
-  | Date applied | Always; default sort |
+  | Date applied | Always; the default sort until **[built]** KAN-77 moved it to Added — see below |
   | Role title | Wider screens only |
   | Pay | Wider screens only; annual or hourly — §2 |
   | Source | Wider screens only — **[built]**, the first responsive column. Also the posting link since **[built]** KAN-81 — see below |
@@ -640,7 +640,41 @@ Consequences:
 - **[built]** Sort by record id, company, role, employment type, source,
   required experience, status, next action date, date added, date applied,
   whether it is a favorite, or either end of the pay range — click a header
-  to toggle ascending/descending. Default: date applied, descending.
+  to toggle ascending/descending. **Default: date added, descending** (KAN-77;
+  was date applied until then — see below).
+
+  **[built] The default was date applied until KAN-77, and it was not
+  ordering anything.** Measured on the deployed data at the time: 145 of 147
+  records had no `date_applied`, so almost every row on the default view tied
+  on a NULL key, and §4.2's own NULL-handling rule broke the tie as ascending
+  id — the list opened **oldest first**, with a just-saved application
+  sinking toward the Load more control on any table past 50 rows. Saving from
+  the extension and then looking for the row is the common path, and it was
+  the one the old default got wrong.
+
+  - **The replacement is `created_at` descending, named as Added** — already
+    the sort key behind the Added column (KAN-68) — **rather than `id`.**
+    They produce the same order, both being assigned by the server on
+    insert, so this was a choice of which one to *name*: Added wins because
+    the sort arrow then lands on the column a reader is actually looking at
+    when asking "what's newest." An earlier draft specified `id`, on the
+    grounds that it is exact where Added's rendering is deliberately coarse
+    (KAN-68 shows "Today" and "1d", which cannot distinguish two records
+    saved an hour apart) — true, and beside the point: the coarseness is in
+    the *display*, and the ordering reads the underlying timestamp
+    regardless of which column is named.
+  - **Both defaults move together.** The route's `sort_by`/`sort_dir`
+    defaults and the frontend's own copy of them are one decision in two
+    places; changing only one would leave a bare `GET /applications` and the
+    app's own default request disagreeing about what "default" means.
+  - **The NULL-handling rule below has nothing to do with this key either**,
+    for the same reason it has nothing to do with `id` or `is_favorite`:
+    `created_at` is server-assigned and never NULL, so the leading `IS NULL`
+    term is uniformly false and the ordering is the column alone.
+  - **This does not touch KAN-31's rule**, only which column is the default.
+    Sorting by `date_applied` — asked for explicitly now rather than
+    received by default — still puts a blank at the top on descending. See
+    below.
 
   **[built] Favorite is the second sort key the NULL-handling rule below has
   nothing to do with** (KAN-81), the same footnote `id` already carries: a
@@ -650,10 +684,11 @@ Consequences:
 
   **[decided] A NULL sorts as though it were greater than every real value**
   (KAN-31). Once `date_applied` became optional this stopped being an
-  implementation detail: the default sort is date applied **descending**, and
-  both MariaDB and SQLite put NULLs last in that direction — so the jobs not
-  yet applied to would sink to the bottom, which past 50 rows means below the
-  Load more control (§4.3) and off-screen entirely.
+  implementation detail: sorting by date applied **descending** — the
+  default until KAN-77, and still available by clicking the Applied header —
+  and both MariaDB and SQLite put NULLs last in that direction, so the jobs
+  not yet applied to would sink to the bottom, which past 50 rows means below
+  the Load more control (§4.3) and off-screen entirely.
 
   Treating NULL as the largest value fixes that with a rule rather than a
   special case. It is also the honest reading: an application not yet sent has
