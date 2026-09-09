@@ -577,13 +577,42 @@ Verified live the same way KAN-81 was: a bare request matched an explicit
 still put the undated row first — confirming KAN-31's rule survived the
 default changing out from under it.
 
+**KAN-76 reversed a deliberate KAN-70 decision, once the premise behind it
+turned out to be wrong.** The insights chart originally counted archived
+applications, on the reasoning that archiving is a view decision orthogonal
+to what happened to a record (§4.1) — excluding one would shrink a band on a
+day nothing about its status actually changed. Measured on the deployed
+data, 7 of 142 records were archived (5%), and most of them were not
+clutter being kept out of the worklist — they were **seed data** and an
+**exact duplicate**, records that should never have existed. The sharpest
+case: the very first seed row, "Acme Inc. — Tester," sat in the `applied`
+band as if it were a real application, on a chart still thin enough (per
+KAN-70's own note) that one invented row is a visible share of a small
+number.
+
+**The fix filters which application's history is replayed, not when a
+row stops counting.** An application archived today is excluded from
+*every* day's band, including days before today when a real transition was
+recorded — the row is being treated as though it never existed, so its past
+does not survive either. This is narrower than it might look: it changes
+what one consumer of `archived_at` does with archived rows, not §4.1's
+framing of what `archived_at` means generally. The story is explicit that
+the broader question — whether archiving is now a soft delete everywhere,
+which would also touch the CSV export and the "hidden by filters" count —
+is being deliberately deferred rather than decided by default here.
+
+Verified live: an application with a recorded `interested → offer`
+transition contributed to both statuses' bands; archiving it dropped the
+row from the timeline entirely, `opening_count` included, while the list's
+own `show=active|archived|all` filter kept working exactly as before.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 266 tests, 99% statements
+cd job-tracker-backend && pytest        # 268 tests, 99% statements
 cd job-tracker-frontend && npm test     # 578 tests, 99% statements, 100% functions
 ```
 

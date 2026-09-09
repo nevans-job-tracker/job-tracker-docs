@@ -1332,9 +1332,24 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   rather than drawn as a zero-height sliver.
 - **The legend doubles as today's tally**, so the screen answers "where are
   they now" without reading values off the right-hand edge.
-- **Archived applications are included.** Archiving records whether something
-  should still be in view (§4.1), not something that happened to it — excluding
-  them would make a band shrink on a day when no status changed.
+- **[built] Archived applications are excluded** (KAN-76, reversing the
+  original call recorded just above until it was measured against real
+  data). The premise had been that archiving is a view decision orthogonal
+  to what happened (§4.1), so excluding a row would shrink a band on a day
+  nothing about its status changed. Measured on the deployed data — 7 of 142
+  archived, 5% — the premise did not hold: archiving is mostly used as a
+  *soft delete*, for a record that should never have existed (seed data, an
+  exact duplicate of another row saved twice). A chart describing the search
+  should not count those, and a band shrinking on the day one is archived is
+  now the intended outcome — the row should never have contributed, and the
+  shrink is that correction arriving.
+
+  Implemented as a filter on which application's history is replayed at all,
+  rather than a cutoff at the archive date — so a real transition recorded
+  *before* archiving still stops counting, on every day, not only going
+  forward. This does not revisit §4.1's framing generally, only this one
+  consumer of `archived_at`; the list's own `show=` filter is unrelated and
+  unchanged.
 - **A day with no changes carries the previous day's counts forward.** Without
   that the chart would join across gaps and imply movement that did not happen.
 - **The left edge is a step, and the screen says so** — but from a *number*
