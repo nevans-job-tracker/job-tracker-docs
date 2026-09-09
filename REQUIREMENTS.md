@@ -778,7 +778,7 @@ Consequences:
 
   - **The list has no max-width; the other screens keep 1100px.** That figure
     is a *reading* width chosen for the detail form, and a table is not prose.
-    Applying it to twelve columns needing 1175px forced a scroll on a monitor
+    Applying it to twelve columns needing 1185px forced a scroll on a monitor
     with room to spare. `App.jsx` wraps every route in one element, so the
     width is chosen per route rather than widened for all.
   - **`100%`, not `100vw`, in the collapsing padding** — and they are not
@@ -787,9 +787,15 @@ Consequences:
     scrollbar's width. Measured: 10px of padding where 2.5px fitted, putting
     the table 10px past the right edge with 10px still on the left — exactly
     the asymmetry being removed, reintroduced by the unit.
-  - **The 1180px reference drifts with the columns.** Too low and a sliver of
-    asymmetric padding returns; too high and the padding disappears earlier
-    than it needs to. It is the one hand-tuned number here.
+  - **The 1280px reference drifts with the columns, and the two directions to
+    be wrong in are not equal.** Measured, the table's min-content is 1185px.
+    The first attempt used 1180 — just *below* it — which left 2.5px of padding
+    at the moment the table ran out of room and put it 3px past the right edge
+    with 3px still on the left: a three-pixel version of the exact defect this
+    exists to remove. Too high only means the padding disappears a little
+    earlier than it strictly had to, which is what rule 2 asks for anyway.
+    **Err high.** The headroom also absorbs the next column before the number
+    has to move again.
   - **Below 900px the padding does not collapse**, because `col-wide` has
     already hidden eight columns and the padding is doing its ordinary job.
     The four survivors currently need ~460px, so a 402px phone still scrolls
@@ -800,7 +806,8 @@ Consequences:
     the Pay header (KAN-72) and Id prepended (KAN-74).
   - **jsdom cannot see any of this** (§5). The tests assert the route-dependent
     width, which is the decision; every geometric claim above was measured
-    against a real viewport at 1785, 1360, 1185, 1105 and 375.
+    against a real viewport at 1785, 1360, 1185, 1085 and 375 — before and
+    after, and again on the deployed build.
   - **A wrong turn worth recording.** This first shipped as an
     `overflow-x: auto` wrapper around the table, which fixed the page
     scrollbar and the gutters and was still wrong: it traded them for a

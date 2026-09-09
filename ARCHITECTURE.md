@@ -449,7 +449,7 @@ container cannot extend padding to overflowing content.
 
 **Nothing caused it; twelve columns did.** Experience, employment type, Added,
 the pay header gaining two sort keys and Id prepended, each fine on its own,
-until min-content reached 1175px against a 1068px content box.
+until min-content reached 1185px against a 1068px content box.
 
 **It shipped wrong first, and that is the part worth keeping.** The initial fix
 wrapped the table in `overflow-x: auto`. That did fix the page scrollbar and
@@ -464,15 +464,32 @@ space, and only then does the page scroll. The list also drops the 1100px cap
 the other screens keep — that is a *reading* width chosen for the detail form,
 and a table is not prose.
 
-One unit change carried the whole thing: `100vw` includes the vertical
-scrollbar, so at the moment the padding is closing it overstated the space by
-the scrollbar's width — 10px of padding where 2.5px fitted, which put the table
-back past the right edge with padding still on the left. `100%` resolves
-against the content width instead.
+**Two measurements carried the whole thing, and both were wrong first.**
+`100vw` includes the vertical scrollbar, so as the padding closes it overstates
+the space by the scrollbar's width — 10px of padding where 2.5px fitted, which
+put the table back past the right edge with padding still on the left. `100%`
+resolves against the content width instead.
 
-**A process note.** The wrapper was first applied with `npx prettier`, which is
-not a dependency of this repo and reformatted the whole file — 171 insertions
-of unrelated reflowing around a five-line change. Reverted and redone by hand.
+Then the reference itself: set to 1180 on an assumed min-content of 1175, when
+the real figure is 1185. Deploying left a three-pixel version of the original
+defect. The lesson is that the two directions are not equal — too low
+reintroduces the asymmetry, too high only closes the padding slightly early,
+which is what the rule wants anyway. Err high; it is now 1280.
+
+Both were found by deploying and measuring rather than by reading the CSS,
+which is the same lesson §5 already records about jsdom and layout.
+
+**Two process notes.** The wrapper was first applied with `npx prettier`, which
+is not a dependency of this repo and reformatted the whole file — 171
+insertions of unrelated reflowing around a five-line change. Reverted and
+redone by hand.
+
+And editing CSS by string surgery left a stray `}`, which the build reported as
+`Unexpected "}" [css-syntax-error]` for three commits. Nothing was lost —
+esbuild recovers, and the minified sheet carries the same 142 rules either way,
+which is why every measurement was still correct — but a standing warning is
+one nobody reads the next time it means something. It was spotted in a pasted
+build log rather than by me.
 
 ## Testing
 
