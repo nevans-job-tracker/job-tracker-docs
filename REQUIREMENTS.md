@@ -61,6 +61,7 @@ declaration order.
 | `job_description` | text | no | Snapshot of the posting, which outlives the link |
 | `cover_letter` | text | no | What was written to this employer — see below |
 | `archived_at` | datetime | no | Archive marker, indexed; `NULL` means active — §4.1 |
+| `is_favorite` | boolean | yes, defaults `false` | A third axis alongside status and archived_at — see below |
 | `created_at` / `updated_at` | datetime | auto | Server-side defaults |
 
 **[decided] Company size uses Wellfound's bands** (KAN-35), adopted rather
@@ -209,6 +210,29 @@ job you intend to apply for, not only ones already sent — that is the half of
 a job search where the decisions are still open. An empty date is not a
 missing value to be filled in later by default; it is a statement that the
 application has not gone out, and §3's `interested` status is what says so.
+
+**[built] `is_favorite` marks the handful of a shortlist actually worth
+acting on** (KAN-81). A shortlist of 163 has no way to say "this one" without
+it: status records where an application sits in its lifecycle, and archive
+records whether it should still be in view (§4.1) — neither is the judgement
+this adds, and both stay orthogonal to it.
+
+- **NOT NULL, defaulting to `false`** — the `pay_period` reasoning rather than
+  `employment_type`'s (see above). Every record either is or is not a
+  favorite, so there is no honest "unset" the way a pay period never stated
+  would be. That default is also what keeps a POST from the fourth consumer
+  safe: the extension does not know the column exists, and pydantic ignores
+  unknown fields on the way in, so every row it creates lands `false` rather
+  than failing or leaving the column NULL.
+- **It writes no history.** §2.2's `status_changes` table records the
+  lifecycle; a favorite is a preference laid across it, not a transition
+  within it, and putting a toggled flag there would bury real transitions
+  under taste.
+- **[built] It sorts** (§4.2), and the NULL-handling rule in that section has
+  nothing to do here, the same footnote `id` (§4.2) already carries: a NOT
+  NULL column is never NULL, so the leading `IS NULL` sort key is uniformly
+  false. Descending brings favorites to the top for free, since the column is
+  boolean and `true` sorts after `false`.
 
 **This table is the baseline revision plus one** (§5), and it is
 now live on the server as MariaDB 10.11 (KAN-22). Nothing was migrated *from* —
@@ -506,8 +530,8 @@ Consequences:
   | Date applied | Always; default sort |
   | Role title | Wider screens only |
   | Pay | Wider screens only; annual or hourly — §2 |
-  | Source | Wider screens only — **[built]**, the first responsive column |
-  | Job link | Wider screens only — an icon, **[built]** KAN-45 |
+  | Source | Wider screens only — **[built]**, the first responsive column. Also the posting link since **[built]** KAN-81 — see below |
+  | Favorite | Wider screens only — a star, **[built]** KAN-81, in the column the old Job link icon vacated |
   | Experience | Wider screens only — **[built]** KAN-47 |
   | Employment type | Wider screens only — **[built]** KAN-51, replacing Location |
   | Added | Wider screens only — how long ago, in days, **[built]** KAN-68 |
@@ -554,6 +578,11 @@ Consequences:
   four-column budget is untouched and on a phone there is nothing to mis-tap
   at all; the phone opens postings from the detail screen instead (§4.4).
 
+  **The icon is gone as of KAN-81, which moved the link onto Source instead**
+  — see the column-order note below. The mobile story is unchanged: Source
+  stays `col-wide`, so the phone's path to a posting is still the detail
+  screen.
+
 - **[decided]** The mobile column budget is resolved by demoting Role rather
   than abandoning the table. Narrow screens show Company, Status, Next action,
   and Date applied — four columns, within budget, with the actionable field
@@ -597,12 +626,27 @@ Consequences:
     column rather than with a position. The phone still shows Company, Status,
     Next action and Applied.
 
+  **Reordered again by KAN-81, which keeps this rule rather than bending
+  it.** Favorite, Source-as-link and Status are now the row's three
+  interactive controls, and they sit together — where Link and Status
+  previously sat five columns apart, the defect this story existed to fix.
+  The order is now Id, Company, Role, Favorite, Source, Status, Type,
+  Experience, Pay, Next action, Added, Applied. The `thead`/`tbody` drift
+  guard above is exactly what caught the reorder breaking nothing: every
+  cell still reads under its own heading.
+
 - **[decided]** The list gains an **Active / Archived / All** control alongside
   the existing status filter, defaulting to Active (§4.1).
 - **[built]** Sort by record id, company, role, employment type, source,
-  required experience, status, next action date, date added, date applied, or
-  either end of the pay range — click a header to toggle ascending/descending.
-  Default: date applied, descending.
+  required experience, status, next action date, date added, date applied,
+  whether it is a favorite, or either end of the pay range — click a header
+  to toggle ascending/descending. Default: date applied, descending.
+
+  **[built] Favorite is the second sort key the NULL-handling rule below has
+  nothing to do with** (KAN-81), the same footnote `id` already carries: a
+  NOT NULL boolean is never NULL, so the leading `IS NULL` key is uniformly
+  false. Descending brings favorites to the top for free — `true` sorts after
+  `false`, and no tiebreak orders the two groups internally.
 
   **[decided] A NULL sorts as though it were greater than every real value**
   (KAN-31). Once `date_applied` became optional this stopped being an

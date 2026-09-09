@@ -491,14 +491,49 @@ which is why every measurement was still correct — but a standing warning is
 one nobody reads the next time it means something. It was spotted in a pasted
 build log rather than by me.
 
+**KAN-81** added `is_favorite` — a third axis alongside status and
+archived_at, for the handful of a shortlist actually worth acting on — and
+spent the column it bought on two other things: the Link column becomes
+Favorite, and the posting link moves onto Source, which becomes the anchor.
+Nothing was added and nothing was widened; Favorite is what the reshuffle
+funds.
+
+**The mobile question the story raised was answered, not deferred.** A star
+is neither a mis-tap hazard (KAN-60 already removed that) nor a scroll trap
+(the reason the status select stays `col-wide` per KAN-59) — a button is not
+grabbed mid-drag the way a `<select>` is, and a mis-tap costs one tap to undo
+and writes no history. It could have gone in the four-column mobile budget on
+that reasoning alone. It starts `col-wide` anyway: putting it there displaces
+Company, Status, Next action, or Applied, and none of those felt like the
+right one to give up on a first pass. Revisiting this is explicitly on the
+table rather than closed the way KAN-59's phone question was.
+
+**The dangerous case the story flagged — an openable link with no recorded
+source — had no examples in the deployed data, but the API and the form both
+still permit it, so it needed an answer rather than an accident.** Rather than
+special-case that row, every blank source now reads "Unknown" instead of an
+em dash. That is a strictly better default on its own (a dash was a poor touch
+target and said less), and it happens to resolve the dangerous case for free:
+"Unknown" becomes the link text on exactly the row that needed one.
+
+**Verified locally rather than on the deployed server**: the migration
+applies from baseline to head and reverses cleanly on an empty table, and
+separately refuses once a row is marked a favorite — matching every revision
+since KAN-31. A live backend and a real browser session confirmed the sort,
+the optimistic toggle-and-revert, and both Source permutations (a link with
+no source rendering "Unknown" as the anchor; a source with no link rendering
+plain text) behave exactly as specced. Deploying it is still owed, in the
+usual order (`WORKSPACE.md`) — and per §5, a migration shipping through
+Alembic means a restore rehearsal is owed once it does.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 259 tests, 99% statements
-cd job-tracker-frontend && npm test     # 562 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 265 tests, 99% statements
+cd job-tracker-frontend && npm test     # 578 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
