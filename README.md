@@ -7,7 +7,9 @@ of truth** for anything that applies to more than one repo.
 |---|---|
 | [`REQUIREMENTS.md`](REQUIREMENTS.md) | What the app must do. Authoritative where it overlaps with anything else. |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | How the project is put together, deployment, security posture, current state. |
-| [`WORKSPACE.md`](WORKSPACE.md) | How the three repos sit together on a working machine, the branch and submodule conventions, and the gotchas that are not visible from the code. |
+| [`WORKSPACE.md`](WORKSPACE.md) | How the five repos sit together on a working machine, branch/submodule conventions, and gotchas not visible from the code. |
+| [`POSTING_CLOSED_EXTENSION_PLAN.md`](POSTING_CLOSED_EXTENSION_PLAN.md) | Separate Chrome extension: close an existing posting by URL. Implemented locally; design, verification, and Claude handoff. |
+| [`POSTING_CLOSED_DEPLOYMENT.md`](POSTING_CLOSED_DEPLOYMENT.md) | Next action: manual publishing/deployment, Chrome installation, and live acceptance checks. |
 
 `WORKSPACE.md` is imported by a short `CLAUDE.md` stub at the workspace root.
 That root directory is not a git repository, so the stub itself cannot be

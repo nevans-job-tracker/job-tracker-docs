@@ -1652,6 +1652,35 @@ rather than after.
 
 ---
 
+### 6.3 Posting Closed browser extension (implemented locally, 2026-09-11)
+
+**[built — deployment pending]** A separate Chrome extension lets the owner open an existing tracked
+posting, visually confirm it is closed, and click the toolbar button to set
+the matching application's status to `posting_closed` through the API. The
+matching key is the current page URL and the stored `job_link`. The extension
+must not create applications or require searching for the record in the tracker.
+
+The existing status is reused. `PATCH /applications/by-url/status` accepts only
+`job_link` and literal status `posting_closed`. Exact, case-sensitive matching
+includes archived records when detecting ambiguity. No match returns 404;
+multiple matches or a single archived match return 409 without writing. A unique
+unarchived match is updated through the existing status/history path. A repeat
+returns `changed: false` without adding history. Other application fields stay
+unchanged. All existing statuses can transition to Posting Closed.
+
+The extension sends one request on toolbar click and reports progress/success/
+errors through a badge and tooltip. Redirects and URL variations can prevent
+matching; it never infers a posting from a generic destination. Implementation
+details and verification limits are in
+[`POSTING_CLOSED_EXTENSION_PLAN.md`](POSTING_CLOSED_EXTENSION_PLAN.md).
+The owner chose [manual deployment](POSTING_CLOSED_DEPLOYMENT.md), still pending.
+
+Automatic availability checking and batch closure updates are a later intention,
+explicitly outside the first version. The first version reads the tab URL only;
+the user determines closure, so it introduces no automated scraping.
+
+---
+
 ## 7. Non-goals
 
 Stated so they stop resurfacing:

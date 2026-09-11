@@ -27,6 +27,18 @@ location, status, salary range, date applied, notes, next action, and contacts.
 
 ## Architecture decisions
 
+- **Manual closure extension (implemented locally 2026-09-11):** a fifth
+  sibling repository, `chrome-extension-job-tracker-close-posting`, uses one
+  MV3 toolbar click to PATCH `/applications/by-url/status`. It reads only the
+  tab URL; it does not scrape or classify postings. The backend verifies exact
+  matches after SQL candidate selection, rejects ambiguous/archived results,
+  locks matching rows on MariaDB, and reuses the existing status/history writer.
+  No migration or frontend changes are needed. Backend, extension, importer
+  regression, and real-HTTP smoke tests pass locally. The owner selected manual
+  deployment; Chrome and deployed acceptance remain pending. See the
+  [design](POSTING_CLOSED_EXTENSION_PLAN.md) and
+  [deployment checklist](POSTING_CLOSED_DEPLOYMENT.md).
+
 - **Two separate repos**, deployed independently:
   - `job-tracker-backend` — FastAPI REST API
   - `job-tracker-frontend` — React (Vite) single-page app
