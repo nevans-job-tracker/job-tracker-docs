@@ -285,9 +285,34 @@ it; nothing else clears it.
 
 ## Work tracking
 
-Jira project `KAN` on `job-tracker.atlassian.net`. The Atlassian MCP server is
-configured in the workspace's `.mcp.json` (Jira scopes only — no Confluence or
-Bitbucket).
+Jira project `KAN` on `job-tracker.atlassian.net`, driven from
+[`jira-cli`](https://github.com/evansnicholasa/jira-cli) — a single-file,
+dependency-free CLI over the Jira Cloud REST API, checked out at
+`Projects/jira-cli`.
+
+**It is not in this workspace**, and that is deliberate: nothing about it was
+specific to this project, so it lives in its own repo and is cloned wherever it
+is wanted. Clone it beside `job-tracker/` rather than inside it. Setup and the
+full command list are in its README; the short version is a token in
+`~/.config/jira-cli/jira.env` and `JIRA_PROJECT=KAN`.
+
+```bash
+python ../../jira-cli/jira.py search "project = KAN AND statusCategory != Done"
+python ../../jira-cli/jira.py transition KAN-76 Done
+```
+
+**Why it replaced the MCP server.** The board was driven through Atlassian's
+hosted Rovo MCP server, still configured in the workspace's `.mcp.json` (Jira
+scopes only — no Confluence or Bitbucket). That server works, but it meters
+against Rovo credits and **Rovo is not offered on Jira Free**, so keeping it
+meant paying for Standard to use one integration. The REST API underneath is
+available on every plan, unmetered.
+
+Two consequences worth knowing here rather than in the tool's README. It runs
+from anything with a shell, so Claude Code, `claude` in Git Bash and Codex all
+drive the board the same way — where an MCP server only works where it has been
+configured. And it depends on nothing, so it runs on whatever Python is on PATH
+rather than the 3.10–3.12 the backend venv is pinned to (see the gotchas below).
 
 ## Gotchas worth knowing before touching anything
 
