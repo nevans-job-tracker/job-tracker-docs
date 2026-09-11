@@ -1,8 +1,17 @@
 # Posting Closed extension — manual deployment
 
 Prepared 2026-09-11. The owner selected **manual deployment**.
-Implementation and local tests are complete. Nothing has been committed,
-pushed, installed in Chrome, or deployed by this implementation session.
+**Backend deployment confirmed from the owner's terminal screenshot:**
+`develop` at `16398b1`, service active/running, startup migration successful,
+304 server tests passed (99% statements), health OK, and the closure endpoint
+present in OpenAPI. The owner subsequently tested the extension manually and
+reported that it worked. **The initial manual closure feature is complete.**
+The steps below remain as the installation/verification reference for future use.
+Update after public-repository preparation: the extension now has a sanitized
+initial commit. Its `main` was subsequently published and verified at `3ba772c`
+on 2026-09-11. Its configured `manifest.json` is ignored and preserved
+locally; only `manifest.example.json` is tracked. Do not force-add the local
+manifest. Verify current Git/server state before repeating earlier steps.
 
 ## 1. Publish the local changes from Windows
 
@@ -24,13 +33,14 @@ git -C job-tracker-backend add app/schemas.py app/crud.py app/routers/applicatio
 git -C job-tracker-backend commit -m "Close an existing posting by exact URL"
 git -C job-tracker-backend push origin develop
 
-git -C chrome-extension-job-tracker-close-posting add .gitignore CLAUDE.md README.md manifest.json package.json service-worker.js src scripts tests icons
-git -C chrome-extension-job-tracker-close-posting commit -m "Add manual Posting Closed Chrome extension"
+git -C chrome-extension-job-tracker-close-posting status --short
+# The extension's initial commit already exists. Never add the ignored manifest.json.
 ```
 
-The extension has a local Git repository on `main`, with no remote configured.
-It can be loaded directly from this folder; publishing a new GitHub repository
-is optional and separate. No frontend build is needed for this feature. Its
+The extension is already published on `main` at
+`https://github.com/nevans-job-tracker/chrome-extension-job-tracker-close-posting`;
+`origin/main` tracks it. Skip initial commit/remote setup for that repository.
+It can be loaded directly from this folder. No frontend build is needed. Its
 docs submodule can be bumped later; the workspace-root Claude context already
 reads the up-to-date sibling docs directly.
 
@@ -72,8 +82,11 @@ and its docs bump. Pulling current `develop` brings those commits as well.
 3. Pin **Job Tracker — Posting Closed** from the Extensions menu. Its icon is
    an orange briefcase with a minus; the original import extension is separate.
 
-The manifest is already configured for the current LAN tracker. No build is
-needed. If Chrome asks for a local-network permission, review/handle that prompt
+The existing local manifest remains configured for the current LAN tracker.
+A fresh clone must create `manifest.json` from `manifest.example.json` and set
+the tracker origin, either manually or with `npm run configure -- <origin>`.
+The local manifest is intentionally ignored by Git. No build is needed.
+If Chrome asks for a local-network permission, review/handle that prompt
 yourself and report the exact wording if access fails.
 
 ## 4. Verify the actual browser workflow
@@ -93,11 +106,13 @@ yourself and report the exact wording if access fails.
   and final URLs for diagnosis; use the tracker editor as the current fallback.
 
 **Local verification already passed:** 304 backend tests (99% statements),
-44 extension tests, 122 existing importer tests, and the real-HTTP smoke test
+46 extension tests, 122 existing importer tests, and the real-HTTP smoke test
 using five representative URL forms and a temporary migrated SQLite database.
-Chrome API behavior is mocked in the automated tests. Actual Chrome toolbar,
-real redirects, and MariaDB row-lock behavior were not verified in this session.
+Chrome API behavior is mocked in the automated tests. The owner confirmed a
+successful manual Chrome test on 2026-09-11. The report did not specify the
+posting/site, repeat-click history checks, or concurrency behavior; do not
+claim exhaustive live coverage of redirects or MariaDB row locks.
 
-**Next user action:** complete sections 1–3, then report “deployed and installed”
-or paste the first error. The next assistant step is to help verify section 4
-and update the shared context with the actual deployed/installed state.
+**No further user action is required for the first version.** Use the extension
+normally. If a URL fails to match, collect the stored and final URLs for
+diagnosis. Automated availability checks and batch updates remain deferred.

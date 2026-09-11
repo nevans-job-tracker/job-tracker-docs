@@ -1,19 +1,25 @@
 # Posting Closed Chrome extension — implementation plan
 
-Date: 2026-09-11. Status: **implemented and tested locally; manual deployment
-and Chrome acceptance pending**.
+Date: 2026-09-11. Status: **complete — deployed and manually confirmed by owner**.
 
 The user approved implementation after the planning session and chose manual
 deployment. The endpoint and separate extension now exist. This document keeps
 the design and implementation sequence as the cross-repo handoff for Claude or
-Codex; the behavior below is implemented unless explicitly deferred. No Jira
-issue was created and no changes have been committed, pushed, or deployed.
+Codex; the behavior below is implemented unless explicitly deferred. It is
+tracked as KAN-83, written after the work rather than before it — the feature
+was planned, implemented and deployed without a ticket, which is recorded there
+rather than tidied away. Publication update: the extension's sanitized `main` was
+pushed to its GitHub remote and verified at `3ba772c` on 2026-09-11. The owner's
+terminal screenshot confirms backend deployment at `16398b1`: service running,
+304 server tests passed, health OK, and closure endpoint present. The owner
+then tested the extension manually and confirmed it worked. The first version
+is complete; this does not imply every site/redirect/error case was tested live.
 
-**Resume here:** [manual deployment and acceptance checklist](POSTING_CLOSED_DEPLOYMENT.md).
-Local checks passed: 304 backend tests, 44 extension tests, 122 importer tests,
+**Installation reference:** [deployment and acceptance checklist](POSTING_CLOSED_DEPLOYMENT.md).
+Local checks passed: 304 backend tests, 46 extension tests, 122 importer tests,
 and the real-JavaScript-to-FastAPI HTTP smoke test against temporary SQLite.
-Chrome API behavior in the tests is mocked; actual toolbar and site redirects
-still require acceptance checks.
+Chrome API behavior in automated tests is mocked. A manual Chrome test was
+confirmed by the owner; broad live coverage of site redirects remains unspecified.
 
 ## Goal and scope
 
@@ -200,6 +206,15 @@ expand this plan into redirect tracking or a canonicalization system.
 
 ## Claude continuity and future work
 
+Public-repository preparation update (2026-09-11): the extension's first local
+commit was sanitized before any remote was configured. Only the placeholder
+`manifest.example.json` is tracked; the working `manifest.json` remains in place
+and ignored. Configuration generates the local manifest from the template.
+Author/committer now use the public GitHub identity and noreply email, with
+repo-local Git configuration for future commits. Extension tests now total 46.
+Earlier statements below about no initial commit describe implementation-time
+state; inspect current Git state before publishing or deploying.
+
 This plan is stored in `job-tracker-docs`, linked from `WORKSPACE.md`,
 `REQUIREMENTS.md`, and the backend's `CLAUDE.md`. The workspace-root Claude
 stub already imports shared workspace context. A backend-only session should
@@ -208,12 +223,15 @@ The new extension's `CLAUDE.md` links to the canonical plan and deployment
 checklist and records the API contract, URL behavior, config, and test commands.
 Keep deployment-specific extension settings out of reusable context prose.
 
-Resume instruction: **Read the deployment checklist and relevant repo context,
-inspect current Git/server state, then help the owner finish manual deployment
-and Chrome acceptance.** The implementation session tested only disposable
+Resume instruction: **The first version is complete; continue only with a
+reported issue or a newly requested feature. Do not restart deployment or
+installation.** The implementation session tested only disposable
 databases and checked live health/OpenAPI read-only. No production data changed.
-The new extension is a separate local Git repository on `main`, without a
-remote or initial commit. All implementation/context changes remain uncommitted.
+The extension is a separate Git repository on `main`, published at
+`https://github.com/nevans-job-tracker/chrome-extension-job-tracker-close-posting`.
+The verified remote HEAD is `3ba772c` (2026-09-11). Its configured manifest is
+ignored locally; only the placeholder template is public. Shared context changes
+from publication remain local until the docs repository is committed/pushed.
 
 Later, automatic checking can classify postings and submit confirmed closures
 through a batch API. Design that when requested, likely addressing records by

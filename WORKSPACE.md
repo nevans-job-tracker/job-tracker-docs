@@ -21,7 +21,7 @@ job-tracker/                 <- not a repo; local workspace only
 │   └── docs/                <- submodule → job-tracker-docs
 ├── job-tracker-docs/        <- this repo: shared requirements and architecture
 ├── chrome-extension-job-tracker/   <- imports postings; no docs/ submodule
-└── chrome-extension-job-tracker-close-posting/ <- manual closure; local repo
+└── chrome-extension-job-tracker-close-posting/ <- manual closure extension
 ```
 
 | Repo | What it is |
@@ -30,7 +30,7 @@ job-tracker/                 <- not a repo; local workspace only
 | [job-tracker-frontend](https://github.com/nevans-job-tracker/job-tracker-frontend) | React (Vite) single-page app |
 | [job-tracker-docs](https://github.com/nevans-job-tracker/job-tracker-docs) | Shared requirements and architecture |
 | [chrome-extension-job-tracker](https://github.com/nevans-job-tracker/chrome-extension-job-tracker) | Browser extension: scrapes a posting and POSTs it to the API |
-| `chrome-extension-job-tracker-close-posting` | Separate Chrome extension: closes an existing posting by exact URL. Local repo, no remote yet. |
+| [chrome-extension-job-tracker-close-posting](https://github.com/nevans-job-tracker/chrome-extension-job-tracker-close-posting) | Separate Chrome extension: closes an existing posting by exact URL. Published on `main`. |
 
 **The extension is a fourth repo and a first-class API consumer**, even though
 it is never deployed to the server and does not mount `docs/`. That last part
@@ -343,15 +343,20 @@ someone time.
 
 ## Current state
 
-**Implemented locally, manual deployment pending (2026-09-11):** a separate
+**Complete — deployed and manually confirmed (KAN-83, 2026-09-11):** a separate
 one-click Chrome extension to mark an existing posting as Posting Closed by URL.
 Read
 [`POSTING_CLOSED_EXTENSION_PLAN.md`](POSTING_CLOSED_EXTENSION_PLAN.md) before
 resuming this work in Claude or Codex, then follow
 [`POSTING_CLOSED_DEPLOYMENT.md`](POSTING_CLOSED_DEPLOYMENT.md). The endpoint,
-extension, tests, and a fifth local Git repository exist; nothing from this work
-has been committed, pushed, installed in Chrome, or deployed. The owner chose
-manual deployment. Automatic checking and batching remain deferred.
+extension, tests, and fifth Git repository exist. The extension's sanitized
+`main` was published and verified at `3ba772c` on 2026-09-11; its local configured
+manifest stays ignored. The owner's terminal screenshot confirms manual backend
+deployment at `16398b1`, with 304 tests passing, service running, health OK, and
+the closure endpoint present. The owner then tested the extension manually and
+confirmed it worked. No additional action is required for the first version;
+the reported success is not an exhaustive live test of all sites/error cases.
+Automatic checking and batching remain deferred.
 
 **The app is deployed and running** at `http://192.168.0.151/` — nginx serving
 the built frontend, uvicorn on loopback behind it, MariaDB holding the schema.

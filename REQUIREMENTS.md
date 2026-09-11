@@ -1652,9 +1652,9 @@ rather than after.
 
 ---
 
-### 6.3 Posting Closed browser extension (implemented locally, 2026-09-11)
+### 6.3 Posting Closed browser extension (KAN-83)
 
-**[built — deployment pending]** A separate Chrome extension lets the owner open an existing tracked
+**[built]** A separate Chrome extension lets the owner open an existing tracked
 posting, visually confirm it is closed, and click the toolbar button to set
 the matching application's status to `posting_closed` through the API. The
 matching key is the current page URL and the stored `job_link`. The extension
@@ -1673,7 +1673,8 @@ errors through a badge and tooltip. Redirects and URL variations can prevent
 matching; it never infers a posting from a generic destination. Implementation
 details and verification limits are in
 [`POSTING_CLOSED_EXTENSION_PLAN.md`](POSTING_CLOSED_EXTENSION_PLAN.md).
-The owner chose [manual deployment](POSTING_CLOSED_DEPLOYMENT.md), still pending.
+The owner completed [manual deployment](POSTING_CLOSED_DEPLOYMENT.md) and
+confirmed a successful manual Chrome test on 2026-09-11. The first version is complete.
 
 Automatic availability checking and batch closure updates are a later intention,
 explicitly outside the first version. The first version reads the tab URL only;
