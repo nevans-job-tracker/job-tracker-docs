@@ -46,7 +46,7 @@ declaration order.
 | `location` | string(255) | no | |
 | `company_size` | enum | no | Wellfound's six bands — see below |
 | `years_experience_min` | smallint | no | Minimum only; `0` means entry level and is distinct from blank |
-| `status` | enum | yes, defaults `applied` | Ten values, freely assignable — §3 |
+| `status` | enum | yes, defaults `applied` | Eleven values, freely assignable — §3 |
 | `salary_min` | decimal(10,2) | no | Must not exceed `salary_max` |
 | `salary_max` | decimal(10,2) | no | |
 | `salary_currency` | string(10) | no, defaults `USD` | |
@@ -371,8 +371,9 @@ gets built on it later.
 
 ## 3. Status lifecycle
 
-Ten statuses: `interested`, `applied`, `phone_screen`, `interview`, `offer`,
-`rejected`, `ghosted`, `posting_closed`, `scam`, `withdrawn`.
+Eleven statuses: `interested`, `applied`, `phone_screen`, `interview`,
+`offer`, `rejected`, `ghosted`, `posting_closed`, `scam`, `withdrawn`,
+`duplicate`.
 
 **[decided] `interested` marks a job not yet applied for** (KAN-31). It is
 the pair to an empty `date_applied` (§2): without it, a job you intend to
@@ -448,6 +449,46 @@ how a real employer treated the candidate.
   both tables.
 - **Its badge is the one solid rather than a tint**, and that is a decision
   rather than a palette accident — see §4.4.
+
+**[decided] `duplicate` marks the same job held twice** (KAN-86).
+
+The tracker takes the same posting from two sources — saved once from
+LinkedIn and once from the employer's own site — and only one of the two is
+applied to. The other is not an outcome of anything; it is a record that
+should not exist.
+
+That is what makes it different in kind from the ten above, all of which say
+what happened to the *application* or to the *posting*. Nothing happened
+here, and nothing is wrong with the opportunity: the tracker is simply
+holding it more than once. `posting_closed` would claim a real opportunity
+ended, `withdrawn` would claim the candidate pulled out, and `rejected` and
+`ghosted` would claim an employer did something — the same three wrong facts
+KAN-57 and KAN-79 already recorded.
+
+- **It does not replace archiving, and the two are not alternatives.** §4.1
+  keeps them on independent axes: archive records *whether a row should still
+  be in view*, status records *what it is*. Archiving a duplicate already
+  worked and said nothing about why, which is the gap this fills — read back
+  a month later, "archived" leaves the reason to memory. A duplicate usually
+  wants both, so a create must not archive and an archive must not restate
+  the status; both directions are asserted.
+- **The API's own duplicate guard does not reach this case**, which is why
+  the status is needed at all. An identical second record is rejected, but a
+  different `job_link` is a different posting by that rule — and two sources
+  advertising one job is exactly the shape that produces two links.
+- **Inactive by construction, not by listing**, the same property KAN-79
+  asserted. Both `ACTIVE_STATUSES` complements compute the inactive set
+  (KAN-62), so this landed in Inactive with nothing edited, and a duplicate
+  drops out of the default worklist without also being archived.
+- **Appended to the enum**, for the same ordinal reason as the three before
+  it. Its display position is the frontend's, and it reads **last** —
+  outside the run of terminal states rather than at the end of it, because
+  it is not a terminal state. The revision moves three columns and its
+  downgrade refuses while anything holds the value, counting both tables.
+- **It is charted like every other status** (§4.5), reversing how the story
+  was first specified — see there.
+- **Its badge and band separate by weight, not hue**, the KAN-79 move for a
+  different reason — see §4.4.
 
 **[decided] Free assignment.** Any status may be set to any other status at any
 time. There is no transition validation, no terminal states, and no required
@@ -1226,6 +1267,25 @@ must be updated to match.
     describes an ordinary outcome of a real process, and this one says the
     posting was fraudulent, so being the odd one out is the point. It carries
     the same pair in both themes, being mid-dark enough to glare on neither.
+  - **`duplicate` is the second** (KAN-86), and it settled a question the
+    first one only answered for itself: when the palette has no hue left,
+    what decides the next colour is the *chart*, not the badge.
+
+    Badges are read one at a time down a column, where a near-miss survives.
+    Chart bands meet edge to edge, where it does not. Measured in a browser
+    while adding this status: `ghosted` and `posting_closed` differ as bands
+    by a contrast ratio of **1.00** — they are the same colour to the eye,
+    a pre-existing defect that had never been noticed because nothing had
+    made anyone compare two neutrals. A third light neutral would have made
+    it three.
+
+    So `duplicate` is the heaviest neutral rather than another tint — mid
+    slate on light, a lighter slate on dark, more contrast against the
+    surface in both. The neutral family is right for it because it is
+    bookkeeping rather than an outcome; weight is what keeps it apart from
+    the two neutrals already there. Verified in a real browser against all
+    ten other badges: 6.96:1 on light and 6.15:1 on dark, both mid-pack,
+    and 2.07:1 of separation from each neighbouring band.
 
 - **[built] The job posting opens in a new tab** (KAN-45), from the list's
   link column and from an **Open posting** control beside the Job link field
@@ -1350,6 +1410,27 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   forward. This does not revisit §4.1's framing generally, only this one
   consumer of `archived_at`; the list's own `show=` filter is unrelated and
   unchanged.
+- **[decided] No *status* is excluded, and `duplicate` did not become the
+  first** (KAN-86). That status was specified as one that "will not be
+  displayed in Insights", and the exception was dropped once it was clear
+  that the exclusion above is the only one there is — and that it filters on
+  the *record* being archived, not on what the record says.
+
+  The two are not interchangeable. A per-status carve-out would change what
+  the chart claims, from "this is what the tracker held on these days" to
+  "…except the statuses we decided not to count" — which is close to the
+  claim §4.5 rejected the funnel design for, and it would be invisible on the
+  screen itself. Archiving is a decision made about one row, visible on that
+  row, and reversible from it.
+
+  So the escape hatch is the one that already exists: archive a duplicate and
+  KAN-76 removes it from every day, including the days before it was
+  archived. One mechanism for "this row should never have counted" rather
+  than two that then have to agree with each other — and they are pinned
+  together in one pair of tests, so neither half can be changed on its own.
+
+  **Accepted consequence:** a duplicate left unarchived counts toward the
+  chart's total, the same as `scam` and `posting_closed` already do.
 - **A day with no changes carries the previous day's counts forward.** Without
   that the chart would join across gaps and imply movement that did not happen.
 - **The left edge is a step, and the screen says so** — but from a *number*
@@ -1413,9 +1494,9 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 259 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 314 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 562 tests, 99% of statements and **100% of functions**, covering
+    Frontend 632 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

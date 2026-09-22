@@ -619,14 +619,51 @@ transition contributed to both statuses' bands; archiving it dropped the
 row from the timeline entirely, `opening_count` included, while the list's
 own `show=active|archived|all` filter kept working exactly as before.
 
+**KAN-86 added a `duplicate` status**, for the same job saved twice — once
+from LinkedIn and once from another source, with only one of the two applied
+to. The other is not an outcome of anything, which is what makes it different
+in kind from the ten before it: all of those say what happened to the
+application or to the posting, and here nothing happened and nothing is wrong
+with the opportunity. Archiving already hid such a row and recorded only
+*that* it should be out of view, never why.
+
+**The interesting part is the requirement that got reversed.** It was
+specified as a status that would not appear on the insights chart — and no
+status is excluded from that chart. The only exclusion is KAN-76's, directly
+above, which filters on the *record* being archived rather than on what the
+record says. Carving out the first per-status exception would have changed
+what the chart claims, from "this is what the tracker held on these days" to
+"except the ones we decided not to count", invisibly and on a screen whose
+whole design argument (§4.5) is about not overstating what the data supports.
+
+So a duplicate is charted like everything else, and the escape hatch is the
+one that already existed: archive it, and KAN-76 removes it from every day.
+One mechanism for "this row should never have counted" instead of two that
+then have to agree — and the two halves are pinned together in one pair of
+tests, so neither can be changed alone.
+
+**The colour turned out to be a chart decision rather than a badge
+decision.** `duplicate` is bookkeeping, not an outcome, so a neutral is
+right — but `ghosted` holds the cool grey and `posting_closed` the light
+slate. Measured in a browser, those two differ as chart bands by a contrast
+ratio of **1.00**: they are the same colour to the eye, a pre-existing defect
+nobody had noticed because nothing had made anyone compare two neutrals
+edge to edge. A third light neutral would have made it three. So this one
+separates by weight rather than hue — the move KAN-79 made for `scam` when
+the palette ran out — and is the heaviest neutral in both themes.
+
+Badges survive a near-miss because they are read one at a time down a column.
+Bands do not, because they meet. That is the general lesson, and it is why
+the next status's colour should be chosen against the chart first.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 268 tests, 99% statements
-cd job-tracker-frontend && npm test     # 578 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 314 tests, 99% statements
+cd job-tracker-frontend && npm test     # 632 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
