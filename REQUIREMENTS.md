@@ -1121,6 +1121,26 @@ Consequences:
     no control (§4.4). It clears through the same handler as typing, so the
     URL-state rules below apply unchanged.
 - **[built]** Filter to a single status, or all statuses.
+- **[built] A Reset Filters control returns the row to its defaults**
+  (KAN-78), and **it sits beside the search box** (KAN-87).
+
+  - **Always rendered, never conditional.** A control that appears only when
+    it would do something reflows the row and cannot be aimed at from memory,
+    and the moment you reach for it is the moment you are least sure what
+    state the view is in. Disabled carries that signal without moving
+    anything. Deliberately unlike the search box's clear button, which sits
+    *inside* the field where its absence costs nothing.
+  - **Its position reverses KAN-78, and the reason is worth keeping.** That
+    story put it last in the row so it would read as an action on the filters
+    rather than as a sixth filter. Position was carrying that distinction
+    alone, and it cost the control the thing it is most often reached for:
+    clearing the search, from the far end of the row. Its *shape* carries the
+    distinction now — bordered like the theme toggle, in the ordinary text
+    colour rather than the accent — so it can sit where it is used.
+  - **It stretches to the row's height rather than declaring one**, so it
+    stays level with the selects beside it whatever they measure. It was a
+    borderless accent-coloured label at roughly half their height, which read
+    as a link parked among controls.
 - **[built]** Result count displayed; empty state when no applications exist.
 - **[gap]** Search does not cover `job_description` or `cover_letter`.
   *"Which letter did I say that in?"* is a natural question the tracker
@@ -1267,6 +1287,11 @@ must be updated to match.
     describes an ordinary outcome of a real process, and this one says the
     posting was fraudulent, so being the odd one out is the point. It carries
     the same pair in both themes, being mid-dark enough to glare on neither.
+  - **The crescent faces the conventional way** (KAN-87). U+263E renders
+    opening to the right in this font stack, the mirror of the moon every
+    other dark-mode toggle uses. It is flipped with a CSS transform rather
+    than swapped for U+263D, because which way either code point actually
+    faces is the font's decision and a transform is not.
   - **`duplicate` is the second** (KAN-86), and it settled a question the
     first one only answered for itself: when the palette has no hue left,
     what decides the next colour is the *chart*, not the badge.
@@ -1286,6 +1311,36 @@ must be updated to match.
     the two neutrals already there. Verified in a real browser against all
     ten other badges: 6.96:1 on light and 6.15:1 on dark, both mid-pack,
     and 2.07:1 of separation from each neighbouring band.
+
+- **[built] The list header is one set of controls, and none of them is
+  filled** (KAN-87). Light mode, Export CSV, Insights and + Add application
+  were built at four different times and agreed on nothing: three heights,
+  two font sizes, and a border on two of the four.
+
+  - **Measured on the deployed build before the fix**, at 1440px: three
+    controls centred on 85 and Insights on 82, at heights of 32, 32, 36 and
+    32. Two causes, both in the back link. Its `min-height: 36px` made it the
+    tallest, and its `margin-bottom: 6px` lifted it against the header's
+    `align-items: center`. That margin is right on the detail and insights
+    screens, where the link sits above a heading, so it is removed in this
+    header and kept everywhere else. All four now measure 36px on a shared
+    centre.
+  - **Export CSV lost its green fill and kept the green as text.** It was the
+    only solid-background control on the screen and therefore the loudest
+    thing on it, while being among the least-used: applications arrive
+    through the extension or an agent far more often than through the UI, so
+    + Add application is rarely pressed either and loses its fill too.
+  - **That is KAN-58's rule reaching this header.** The detail screen's
+    buttons were ranked by how often each is used rather than by which
+    existed first. The same reasoning says a header of navigation and export
+    controls has no primary action to give a filled button to.
+  - Colour still separates them, as text: green for Export CSV, accent for
+    Insights and Add, muted for the theme toggle, which is chrome rather than
+    an action.
+  - **jsdom cannot see any of this** (§5). The tests pin that no header
+    button takes the filled default, which is the decision; every height and
+    centre above was measured against a real viewport at 1440, 900 and 402,
+    before and after.
 
 - **[built] The job posting opens in a new tab** (KAN-45), from the list's
   link column and from an **Open posting** control beside the Job link field
@@ -1496,7 +1551,7 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 314 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 632 tests, 99% of statements and **100% of functions**, covering
+    Frontend 639 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was

@@ -656,6 +656,42 @@ Badges survive a near-miss because they are read one at a time down a column.
 Bands do not, because they meet. That is the general lesson, and it is why
 the next status's colour should be chosen against the chart first.
 
+**KAN-87 made the list header one set of controls.** Light mode, Export CSV,
+Insights and + Add application were added at four different times and agreed
+on nothing: three heights, two font sizes, and a border on two of the four.
+Measured on the deployed build at 1440px, three sat centred on 85 and Insights
+on 82.
+
+**Both causes were in one control, and one of them is right elsewhere.** The
+Insights link is a `.back-link`, which carries `min-height: 36px` and a
+`margin-bottom: 6px`. The margin exists because on the detail and insights
+screens that link sits above a heading; in a row of controls under
+`align-items: center` it lifts the link three pixels above its neighbours. So
+the margin is removed in this header and kept everywhere else, rather than
+deleted and then missed somewhere it was load-bearing.
+
+**Nothing in the header is filled any more.** Export CSV was the only
+solid-background control on the screen, which made the least-used thing on it
+the loudest — applications arrive through the extension or an agent far more
+often than through the UI, so + Add application was in the same position. Both
+keep their colour as *text* rather than fill. This is KAN-58's rule, which
+ranked the detail screen's buttons by how often each is used rather than by
+which existed first, reaching a second screen.
+
+**Reset Filters moved, which reverses KAN-78.** That story put it last in the
+row so it would read as an action on the filters rather than as a sixth
+filter, and position was carrying that distinction by itself. The cost was
+that the control sat as far as the row allows from the search box, which is
+what it is most often reached for. Given a border and the dropdowns' own text
+colour, its shape carries the distinction instead, so it can sit where it is
+used. It stretches to the row's height rather than declaring one, so it stays
+level with the selects whatever they measure.
+
+**The narrow-screen page scroll is unchanged, and that was checked rather than
+assumed**: 439px of document against a 402px viewport, identical before and
+after, which is the pre-existing overflow KAN-80 recorded for the four-column
+phone layout.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -663,7 +699,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 314 tests, 99% statements
-cd job-tracker-frontend && npm test     # 632 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 639 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
