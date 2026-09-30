@@ -1067,6 +1067,85 @@ Consequences:
     it would take a control that cannot be grabbed mid-scroll, not a change
     of breakpoint.
 
+- **[built] The Applied date can be corrected from the list** (KAN-66), and
+  two rules ride on the status select beside it.
+
+  Recorded late. KAN-66, KAN-84 and KAN-92 all shipped without an entry here,
+  and §4.2 has now been corrected three times — KAN-48, KAN-74 and this — for
+  the same drift of documented scope against shipped behaviour. The pattern is
+  the point: a list behaviour that is only in the code is one nobody can
+  contradict later.
+
+  - **The cell becomes a date input on wide screens; the phone keeps plain
+    text**, following the status select's reason rather than a new one: a
+    native control is a scroll trap on touch (KAN-59). An undated row stays
+    blank rather than pre-filling today.
+  - **It cannot save on every change the way the select does.** A native date
+    input reports a change for each segment edit that forms a valid date, so
+    typing a year of 2025 passes through 0002, 0020 and 0202 — saving each
+    would write a nonsense year mid-keystroke. A change with *no key pressed*
+    is a picker selection and saves at once; typing waits for Enter or blur;
+    Escape abandons; blank is never saved.
+  - **The browser's calendar icon is removed and the cell opens the picker
+    itself**, through `showPicker()` with a fallback to typing. That is a
+    layout decision, not a cosmetic one: the icon made the column 132px, which
+    squeezed Role and Company onto extra lines and cost 11.7px per row at
+    1300px. At 111px it costs 4.3px.
+  - **It pushed KAN-80's padding reference from 1280 to 1360.** The table's
+    min-content had already drifted from the recorded 1185px to 1226px before
+    this change and passed 1280 with it, reproducing KAN-80's defect exactly
+    at a 1300px window — 2.3px of left padding, the table 3px past the right
+    edge. That section says to err high when columns grow, and this is that
+    instruction being followed.
+
+  **[built] Marking an Interested row Applied stamps today's date** (KAN-84).
+  Moving a row to Applied records *that* you applied but not *when*, and it is
+  almost always today, because you are marking it at the moment you do it.
+
+  - **Narrow on both sides.** Only from `interested`, the one status that
+    asserts you have not applied — set from `rejected` this is a correction to
+    a record whose date is already a historical fact, and inventing today over
+    it would be wrong. And only when the date is empty, so the rule can never
+    overwrite something real.
+  - **Sent explicitly in one PATCH rather than inferred server-side**, so the
+    rule cannot reach the extension or a hand-made request. One PATCH carrying
+    both fields writes one §2.2 history row, because `update_application`
+    captures the previous status before applying the update.
+  - **It fixed a timezone bug it would otherwise have inherited.** The form's
+    `today()` was `new Date().toISOString().slice(0, 10)`, which converts to
+    UTC first and so returns **tomorrow** from 20:00 in America/New_York —
+    most of the evening, and §1 says this app is read from a phone at night.
+    It hid itself: the new-entry form pre-filled tomorrow and the future-date
+    warning compared against the same wrong value, so it never fired.
+    `src/dates.js` reads the local parts and is now the app's one definition
+    of today. `csvFilename` still uses UTC deliberately — a filename is not a
+    record.
+
+  **[built] The same move clears a stale "Apply" next action** (KAN-92). The
+  row was otherwise left contradicting itself: Status Applied, Applied today,
+  Next action still instructing you to apply — in the column this section
+  calls the most actionable one, and one of only four a phone shows.
+
+  - **Measured before deciding, and it removed two questions.** 182 of 215
+    records carried a `next_action` and every one was exactly `Apply`; the
+    only other values in the table were three one-offs; and not one of the 182
+    had a `next_action_date`. So there was no `Apply by Friday` whose deadline
+    could be destroyed, and no orphaned date left pointing at a cleared action.
+  - **Exact match, trimmed and case-folded, not a prefix.** `Apply` carries
+    nothing the status does not; `Apply by Friday 5pm` carries a deadline. No
+    such value exists today, which is why the narrow rule costs nothing now
+    and is still right when one appears.
+  - **It shares KAN-84's transition but deliberately not its date guard.**
+    That guard exists so a real date is never overwritten; `Apply` is stale
+    whether or not a date was already recorded, so reusing it would leave the
+    text behind on exactly the rows KAN-84 declines to stamp.
+  - **Cleared to `null`, never `""`.** This section sorts NULL as greater than
+    every real value and an empty string is a real value, so clearing with
+    `""` would quietly move the row in a Next-action sort.
+  - **List screen only**, matching KAN-84. The detail screen shows
+    `next_action` as an editable field beside the status, where an inference
+    rule would fight a value the user is already looking at.
+
 - **[built] The list shows how long ago each application was added** (KAN-68),
   as a count of days rather than a date.
 
@@ -1551,7 +1630,7 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
     generated output, and all four are gitignored.
   - **Coverage as measured:** backend 314 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 639 tests, 99% of statements and **100% of functions**, covering
+    Frontend 653 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
@@ -1576,6 +1655,22 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
       nobody reads produces false confidence rather than none. The script
       writes a status file and an `update-motd.d` hook prints it — one quiet
       line on success, red with both exit codes on failure.
+    - **The timeout is set for that machine, not for the laptop** (KAN-88).
+      Vitest defaults to 5s and one test went over it, so the nightly banner
+      read FAIL for weeks. Measured on the server rather than guessed:
+      `pagination > appends the next page instead of replacing` takes **11.1s
+      alone and 5.5s alongside two other files**, against a suite that runs
+      in 286s there and 61s on the development laptop. `testTimeout` is now
+      20000, chosen against the worst of those measurements rather than the
+      average, and deliberately no larger — the cost of raising a timeout is
+      that a real hang sits undetected for that long.
+
+      The test is not wrong and neither is what it renders; 5s was the wrong
+      number for where this actually runs. What makes it worth fixing rather
+      than tolerating is the hook above: a banner permanently reading FAIL
+      for a known reason trains the reader to skip the line, which is the
+      same false confidence the hook exists to prevent, arriving by a
+      different route.
   - **The test suite destroys data, so it must never reach the live database.**
     `tests/conftest.py` empties every table after each test. On the server this
     margin is thinner than it looks: the backend's `.env` sits in the working

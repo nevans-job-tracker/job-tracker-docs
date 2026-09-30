@@ -692,6 +692,53 @@ assumed**: 439px of document against a 402px viewport, identical before and
 after, which is the pre-existing overflow KAN-80 recorded for the four-column
 phone layout.
 
+**Three list behaviours were written up late, in one pass.** KAN-66, KAN-84
+and KAN-92 all shipped without a line in `REQUIREMENTS.md`, and §4.2 has now
+been corrected three times — KAN-48, KAN-74 and this — for the same drift of
+documented scope against what the code does. Recorded together because the
+repetition is the finding: the rule that every story updates the docs is one
+this project keeps stating and then not following on the small changes.
+
+**KAN-66 made the Applied date editable from the list**, and the interesting
+part is what a native `<input type="date">` does. It reports a change for
+*each segment edit that forms a valid date*, so typing a year of 2025 passes
+through 0002, 0020 and 0202 — saving on change, the way the status select
+does, would write a nonsense year mid-keystroke. A change with no key pressed
+is a picker selection and saves at once; typing waits for Enter or blur.
+
+It also moved KAN-80's padding reference from 1280 to 1360, and found that
+the table's min-content had already drifted from the recorded 1185px to
+1226px without anyone noticing. A 1300px window reproduced KAN-80's defect
+exactly. That section says to err high when columns grow; this is the first
+time that instruction was cashed in.
+
+**KAN-84 made marking a row Applied stamp today's date**, and carried a
+timezone bug out of the form on the way. The existing `today()` was
+`new Date().toISOString().slice(0, 10)`, which converts to UTC first and
+therefore returns **tomorrow** from 20:00 in America/New_York. It had hidden
+itself perfectly: the new-entry form pre-filled tomorrow, and the future-date
+warning compared against the same wrong value, so it never fired. The app now
+has one definition of today in `src/dates.js`.
+
+**KAN-92 finished that move** by clearing a `next_action` of "Apply" when
+Interested becomes Applied, since the row was otherwise left instructing you
+to do the thing just done. Measured first, which removed two design questions
+before they cost anything: 182 of 215 records carried a next action and every
+one was exactly "Apply", and not one had a `next_action_date` — so no
+deadline to destroy and no orphaned date to leave behind.
+
+**KAN-88 raised the test timeout to a figure the server can meet.** The
+nightly suite had been reporting FAIL on one test hitting vitest's 5s
+default. Measured on that machine rather than guessed: it takes 11.1s alone
+and 5.5s alongside two other files, on a box where the suite runs in 286s
+against 61s on the laptop. The test is not wrong; 5s is a laptop number.
+
+Worth recording for the reason rather than the number. KAN-26 put the result
+at SSH login because an unread failure is false confidence rather than none —
+and a banner permanently reading FAIL for a known cause trains the reader to
+skip the line, which is that same false confidence arriving by a different
+route. A tolerated red is not a smaller problem than an unread one.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
@@ -699,7 +746,7 @@ hand during development:
 
 ```bash
 cd job-tracker-backend && pytest        # 314 tests, 99% statements
-cd job-tracker-frontend && npm test     # 639 tests, 99% statements, 100% functions
+cd job-tracker-frontend && npm test     # 653 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is
