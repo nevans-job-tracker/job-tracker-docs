@@ -739,14 +739,56 @@ and a banner permanently reading FAIL for a known cause trains the reader to
 skip the line, which is that same false confidence arriving by a different
 route. A tolerated red is not a smaller problem than an unread one.
 
+**KAN-90 put a second chart on the insights screen** — how many applications
+were *sent* on each day. §7 had to be amended again for it, and deliberately:
+that section says in as many words that a second chart is a new decision
+rather than something §4.5 already licensed, so this is the decision being
+taken rather than drifted into. The line still reads one reporting *screen*.
+
+**Its data source was decided in advance and could simply be cashed in.**
+§2.2, written when the history table shipped, says a graph of applications
+per day should read `date_applied` rather than `status_changes`, because
+`changed_at` is when a row was *edited* — a batch entered on Sunday evening
+would all land on Sunday. That note was two stories ahead of anything that
+needed it, and it saved the question being reopened.
+
+**The two charts disagree about what a quiet day means, and both are
+right.** The status chart carries the previous day's counts forward, because
+it is a snapshot: an application still sits in a status on a day nothing
+happened to it. This one counts events, so a day with nothing sent is a real
+zero and the line descends to the axis and back. Joining across it would
+draw activity that did not happen.
+
+**The interaction is where the work was.** Nearest-point-on-the-x-axis
+rather than a hit area per marker, and the reason is measured rather than
+aesthetic: at 402px the plot is 342px across 22 days, so markers sit ~16px
+apart against the project's 36px touch target. Per-marker areas would
+overlap and leave days unreachable by thumb.
+
+A tooltip on hover also serves exactly one input method, so there are three:
+hover, tap, and arrow keys on a focusable plot. The exact answer additionally
+lands in a text line with `aria-live`, because an SVG tooltip is invisible to
+a screen reader and gone the moment a thumb lifts. And `touch-action: none`,
+or dragging along the chart to read it scrolls the page instead.
+
+**It stayed hand-rolled.** A tooltip is precisely the feature that makes a
+charting library tempting, and KAN-70's budget argument has not changed.
+Measured: 3.9 KB raw, 1.2 KB gzipped.
+
+**Verified against the deployed data's real shape rather than an invention.**
+49 applications over 22 days with a peak of 12, seeded into a throwaway
+database and served by the real endpoint, because the production backend did
+not have the route yet and a stub would have tested the chart against
+whatever the stub said.
+
 ## Testing
 
 Both suites run **nightly on the server** via a systemd timer (KAN-26), and by
 hand during development:
 
 ```bash
-cd job-tracker-backend && pytest        # 314 tests, 99% statements
-cd job-tracker-frontend && npm test     # 653 tests, 99% statements, 100% functions
+cd job-tracker-backend && pytest        # 327 tests, 99% statements
+cd job-tracker-frontend && npm test     # 687 tests, 99% statements, 100% functions
 ```
 
 The backend suite runs against throwaway SQLite, so no database server is

@@ -1595,6 +1595,61 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   which is an accurate picture of a shortlist, and the reason the stacked area
   was chosen over the two designs that would have overstated it.
 
+**[built] A second chart: applications *sent* per day** (KAN-90), below the
+status chart on the same screen.
+
+- **It reads `date_applied`, and §2.2 settled that before either chart
+  existed:** *"A graph of applications per day should therefore read
+  `date_applied`, not this table."* `changed_at` records when a row was
+  *edited*, so a batch entered on Sunday evening would all land on Sunday
+  regardless of when they went out. A test pins the choice rather than
+  trusting the comment — a record dated in the past whose history row is
+  stamped now.
+- **A quiet day is an explicit zero, which is the opposite of the chart
+  above.** That one is a snapshot and carries the previous day's counts
+  forward, because an application still sits in a status on a day nothing
+  happened to it. This one counts *events*, so joining 09-12 to 09-15 would
+  draw three days of steady activity that did not happen. The line descends
+  to the axis and back instead.
+- **The range runs to today even after a quiet stretch.** Trailing zeros
+  answer "how am I doing lately" rather than being missing data. A future
+  `date_applied` is permitted (§2 warns rather than rejects), so the end is
+  whichever is later.
+- **It covers a minority of records on purpose.** Measured on the deployed
+  data: 51 of 215 carry a `date_applied`, 49 of them unarchived, across 13
+  active days in a 20-day span with a peak of 12 and a median of 3. Most of
+  the tracker is a shortlist never applied to (KAN-31), so this is
+  "applications sent", not "activity" — and the screen says so, because that
+  is the thing most likely to be misread.
+- **A line with a marker per day, not bars.** Bars are the textbook encoding
+  for a daily count; what decided it is that the point of this chart is
+  reading *one specific day* off it, and a marker is something to aim at.
+  KAN-91 makes those markers open the day's applications, so they have to
+  exist as targets regardless.
+- **Nearest-point-on-the-x-axis rather than a hit area per marker**, which is
+  a mobile decision rather than a convenience. Measured at 402px: the plot is
+  342px across 22 days, so markers sit ~16px apart against the project's 36px
+  touch target (KAN-58, KAN-73). Per-marker areas would overlap and leave
+  days unreachable by thumb; this way every horizontal position selects
+  something.
+- **Three input methods, because a tooltip on hover serves exactly one.** Tap
+  for the phone §1 makes a real target, and arrow keys on a focusable plot
+  for the keyboard, which hover excludes entirely. The exact answer also
+  lands in a text line under the chart with `aria-live`, where it survives a
+  thumb lifting and where a screen reader can reach it — an SVG tooltip is
+  invisible to both. `touch-action: none`, or dragging along the chart to
+  read it scrolls the page instead.
+- **Still hand-rolled SVG** (KAN-70). A tooltip is the part that makes a
+  charting library tempting. Measured: 3.9 KB raw, 1.2 KB gzipped.
+- **Losing one endpoint costs one chart, not the page.** The screen reads
+  both with `Promise.allSettled`, which is KAN-56's rule for the source
+  filter applied to a screen with two independent reads. The two empty states
+  differ and say so: history begins at the first record, but this chart needs
+  one that was actually applied to.
+- **Below the status chart rather than above it.** That one answers "how is
+  it going", which is why the screen exists; this answers "what have I been
+  doing". An ordering call and nothing more.
+
 ---
 
 ## 5. Non-functional requirements
@@ -1628,9 +1683,9 @@ detail screen's timeline, and the one KAN-42 shipped early to make possible.
   - Both suites write HTML coverage and result reports on every run
     (`htmlcov/`, `report.html`, `coverage/`, `test-results/`). All four are
     generated output, and all four are gitignored.
-  - **Coverage as measured:** backend 314 tests, 99% of statements — the only
+  - **Coverage as measured:** backend 327 tests, 99% of statements — the only
     uncovered line is the MySQL URL branch, which tests never take by design.
-    Frontend 653 tests, 99% of statements and **100% of functions**, covering
+    Frontend 687 tests, 99% of statements and **100% of functions**, covering
     routing, the API client, both page components, and all five UI components.
   - Frontend function coverage was 79% while statements were at 99%. The gap
     was inline JSX handlers that delegate to a covered helper — the logic was
@@ -1931,3 +1986,8 @@ Stated so they stop resurfacing:
   - **The non-goal still holds for everything else.** A second chart is a new
     decision, not something §4.5 has already licensed — the line reads "one
     reporting screen", not "reporting is now in scope".
+  - **That decision was taken once** (KAN-90): applications sent per day, on
+    the same screen, reading `date_applied` rather than the history table.
+    Recorded here as well as in §4.5 because this paragraph is what required
+    it to be a decision rather than a drift. The line still reads one
+    reporting *screen*; a third chart is a third decision.
