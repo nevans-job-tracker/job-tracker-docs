@@ -13,7 +13,7 @@ of truth** for anything that applies to more than one repo.
 
 `WORKSPACE.md` is imported by a short `CLAUDE.md` stub at the workspace root.
 That root directory is not a git repository, so the stub itself cannot be
-versioned — which is exactly why the content lives here instead of there.
+versioned, so the content lives here instead of there.
 
 ## Consumed by
 
@@ -22,7 +22,7 @@ Both code repos include this repo as a git submodule at `docs/`:
 - [job-tracker-backend](https://github.com/nevans-job-tracker/job-tracker-backend)
 - [job-tracker-frontend](https://github.com/nevans-job-tracker/job-tracker-frontend)
 
-Repo-specific design notes are **not** here — they live in each repo's own
+Repo-specific design notes are **not** here. They live in each repo's own
 root `CLAUDE.md`.
 
 ## Editing
@@ -42,7 +42,7 @@ cd ../job-tracker-backend && git submodule update --remote docs \
   && git commit -am "Bump docs" && git push
 ```
 
-Step 2 can lag — a stale pointer still resolves to a valid version. Bump it
+Step 2 can lag, because a stale pointer still resolves to a valid version. Bump it
 when the consuming repo needs the newer text.
 
 ## Cloning a consumer
